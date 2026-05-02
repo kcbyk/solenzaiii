@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solenz AI - Solenz Studio</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <!-- Auth Screen -->
+    <div class="auth-screen" id="authScreen">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">S</div>
+                <h1>Solenzi'ye Hoş Geldin</h1>
+                <p>Devam etmek için giriş yap veya hesap oluştur.</p>
+            </div>
+            <div class="auth-forms">
+                <div id="loginForm">
+                    <div class="input-group">
+                        <label>E-posta</label>
+                        <input type="email" id="loginEmail" placeholder="ornek@mail.com">
+                    </div>
+                    <div class="input-group">
+                        <label>Şifre</label>
+                        <input type="password" id="loginPass" placeholder="••••••••">
+                    </div>
+                    <button class="btn-primary auth-btn" id="loginSubmit">Giriş Yap</button>
+                    <p class="auth-switch">Hesabın yok mu? <a href="#" id="toRegister">Kayıt Ol</a></p>
+                </div>
+                <div id="registerForm" style="display: none;">
+                    <div class="input-group">
+                        <label>Ad Soyad</label>
+                        <input type="text" id="regName" placeholder="Adınız">
+                    </div>
+                    <div class="input-group">
+                        <label>E-posta</label>
+                        <input type="email" id="regEmail" placeholder="ornek@mail.com">
+                    </div>
+                    <div class="input-group">
+                        <label>Şifre</label>
+                        <input type="password" id="regPass" placeholder="••••••••">
+                    </div>
+                    <button class="btn-primary auth-btn" id="regSubmit">Kayıt Ol</button>
+                    <p class="auth-switch">Zaten hesabın var mı? <a href="#" id="toLogin">Giriş Yap</a></p>
+                </div>
+                <div id="phoneForm" style="display: none;">
+                    <div class="input-group">
+                        <label>Telefon Numarası</label>
+                        <input type="tel" id="phoneNumber" placeholder="+90 5xx xxx xx xx">
+                    </div>
+                    <div id="recaptcha-container"></div>
+                    <button class="btn-primary auth-btn" id="sendCodeBtn">Kod Gönder</button>
+                    <div id="otpSection" style="display: none; margin-top: 20px;">
+                        <div class="input-group">
+                            <label>Doğrulama Kodu</label>
+                            <input type="text" id="verificationCode" placeholder="123456">
+                        </div>
+                        <button class="btn-primary auth-btn" id="verifyCodeBtn">Doğrula ve Giriş Yap</button>
+                    </div>
+                    <p class="auth-switch"><a href="#" id="backToLogin">Geri Dön</a></p>
+                </div>
+            </div>
+            <div class="auth-divider"><span>veya</span></div>
+            <div class="social-auth-grid">
+                <button class="btn-secondary social-btn google" id="googleLogin">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                    Google
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-layout" id="appLayout" style="display: none;">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <!-- System Prompt Modal -->
+        <div class="custom-modal" id="promptModal">
+            <div class="modal-overlay"></div>
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3>System Prompt</h3>
+                    <button class="close-modal-btn" id="closePromptModal">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-desc">Yapay zekanın nasıl davranması gerektiğini buraya yazın.</p>
+                    <textarea id="systemPromptInput" placeholder="Örn: Sen her zaman çok kısa ve komik cevaplar veren bir asistansın..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" id="resetPromptBtn">Sıfırla</button>
+                    <button class="btn-primary" id="savePromptBtn">Kaydet</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Modal -->
+        <div class="custom-modal" id="profileModal">
+            <div class="modal-overlay"></div>
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3>Profil Bilgileri</h3>
+                    <button class="close-modal-btn" id="closeProfileModal">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="profile-details">
+                        <div class="profile-avatar-large" id="profileAvatarLarge">S</div>
+                        <div class="profile-info-item">
+                            <label>Ad Soyad</label>
+                            <p id="profileNameText">Yükleniyor...</p>
+                        </div>
+                        <div class="profile-info-item">
+                            <label>E-posta</label>
+                            <p id="profileEmailText">Yükleniyor...</p>
+                        </div>
+                        <div class="profile-info-item">
+                            <label>Hesap Durumu</label>
+                            <p id="profileStatusText">Doğrulanmış</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" id="closeProfileBtn">Kapat</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image Lightbox -->
+        <div class="lightbox" id="imageLightbox">
+            <div class="lightbox-overlay"></div>
+            <button class="lightbox-close">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <img id="lightboxImg" src="" alt="Full Screen">
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" id="newChatSidebarBtn">
+                    <span class="material-symbols-outlined">add</span>
+                    <span>Yeni Sohbet</span>
+                </button>
+            </div>
+            <div class="chat-history" id="chatHistory">
+                <!-- Sabitlenmiş Sohbetler -->
+                <div class="history-group" id="pinnedGroup" style="display: none;">
+                    <div class="group-label">Sabitlenenler</div>
+                    <div id="pinnedList"></div>
+                </div>
+                <!-- Normal Sohbetler -->
+                <div class="history-group" id="todayGroup">
+                    <div class="group-label">Bugün</div>
+                    <div id="historyList"></div>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-profile" id="userProfileBtn">
+                    <div class="avatar" id="userAvatar">S</div>
+                    <div class="user-info-display">
+                        <span class="username" id="userNameDisplay">Solenz Studio</span>
+                        <span class="user-email" id="userEmailDisplay">asistan@solenz.com</span>
+                    </div>
+                    <span class="material-symbols-outlined expand-icon">more_vert</span>
+                </div>
+                <div class="user-menu-dropdown" id="userMenuDropdown">
+                    <div class="user-menu-item" id="openProfileBtn">
+                        <span class="material-symbols-outlined">person</span>
+                        <span>Profilim</span>
+                    </div>
+                    <div class="user-menu-divider"></div>
+                    <div class="user-menu-item logout" id="logoutBtn">
+                        <span class="material-symbols-outlined">logout</span>
+                        <span>Çıkış Yap</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-nav">
+                <button class="menu-toggle" id="menuToggle">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <div class="model-selector-container">
+                    <button class="model-selector" id="modelSelectorBtn">
+                        <span id="selectedModelName">Solenz Core 1.0</span>
+                        <span class="material-symbols-outlined">expand_more</span>
+                    </button>
+                    <div class="model-dropdown" id="modelDropdown">
+                        <div class="model-option active" data-model="sonnet">
+                            <div class="model-info">
+                                <span class="model-name">Solenz Core 1.0</span>
+                                <span class="model-desc">En zeki ve yetenekli modelimiz</span>
+                            </div>
+                            <span class="material-symbols-outlined check-icon">check</span>
+                        </div>
+                        <div class="model-option" data-model="haiku">
+                            <div class="model-info">
+                                <span class="model-name">Solenz Nano</span>
+                                <span class="model-desc">Hızlı ve hafif görevler için ideal</span>
+                            </div>
+                            <span class="material-symbols-outlined check-icon">check</span>
+                        </div>
+                        <div class="model-option" data-model="opus">
+                            <div class="model-info">
+                                <span class="model-name">Solenz Ultra</span>
+                                <span class="model-desc">Karmaşık analizler için en iyisi</span>
+                            </div>
+                            <span class="material-symbols-outlined check-icon">check</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="top-actions">
+                    <button class="top-action-btn" id="searchBtn" title="Sohbetlerde Ara">
+                        <span class="material-symbols-outlined">search</span>
+                    </button>
+                    <button class="top-action-btn" id="newChatTopBtn" title="Yeni Sohbet">
+                        <span class="material-symbols-outlined">edit_square</span>
+                    </button>
+                    <button class="top-action-btn" id="promptModalBtn" title="System Prompt Gir">
+                        <span class="material-symbols-outlined">terminal</span>
+                    </button>
+                    <div class="role-selector-container">
+                        <button class="top-action-btn" id="roleMenuBtn" title="AI Rolü ve Ayarlar">
+                            <span class="material-symbols-outlined">settings</span>
+                        </button>
+                        <div class="role-dropdown" id="roleDropdown">
+                            <div class="dropdown-header">Yapay Zeka Rolü</div>
+                            <div class="role-option active" data-role="general">
+                                <span class="material-symbols-outlined">smart_toy</span>
+                                <div class="role-info">
+                                    <span class="role-name">Genel Asistan</span>
+                                    <span class="role-desc">Yardımcı ve dengeli yanıtlar</span>
+                                </div>
+                            </div>
+                            <div class="role-option" data-role="coder">
+                                <span class="material-symbols-outlined">code</span>
+                                <div class="role-info">
+                                    <span class="role-name">Yazılım Uzmanı</span>
+                                    <span class="role-desc">Kod odaklı ve teknik analiz</span>
+                                </div>
+                            </div>
+                            <div class="role-option" data-role="writer">
+                                <span class="material-symbols-outlined">edit_note</span>
+                                <div class="role-info">
+                                    <span class="role-name">Yaratıcı Yazar</span>
+                                    <span class="role-desc">Hikaye ve içerik üretimi</span>
+                                </div>
+                            </div>
+                            <div class="role-option" data-role="analyst">
+                                <span class="material-symbols-outlined">analytics</span>
+                                <div class="role-info">
+                                    <span class="role-name">Veri Analisti</span>
+                                    <span class="role-desc">Mantıksal ve detaylı raporlar</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="top-action-btn" id="shareBtn" title="Sohbeti Paylaş">
+                        <span class="material-symbols-outlined">ios_share</span>
+                    </button>
+                    <div class="more-menu-container">
+                        <button class="top-action-btn" id="moreMenuBtn" title="Daha Fazla">
+                            <span class="material-symbols-outlined">more_vert</span>
+                        </button>
+                        <div class="more-dropdown" id="moreDropdown">
+                            <div class="more-option" id="themeSettingsOption">
+                                <span class="material-symbols-outlined">palette</span>
+                                <span>Tema Ayarları</span>
+                            </div>
+                            <div class="more-option" id="instructionsOption">
+                                <span class="material-symbols-outlined">info</span>
+                                <span>Talimatlar</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="chat-container" id="chatContainer">
+                <!-- Welcome Screen (Visible initially) -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <h1>Sana nasıl yardımcı olabilirim?</h1>
+                    <div class="suggestion-grid">
+                        <div class="suggestion-card">
+                            <span class="material-symbols-outlined">edit</span>
+                            <p>E-posta taslağı yaz</p>
+                        </div>
+                        <div class="suggestion-card">
+                            <span class="material-symbols-outlined">code</span>
+                            <p>Kodumu analiz et</p>
+                        </div>
+                        <div class="suggestion-card">
+                            <span class="material-symbols-outlined">lightbulb</span>
+                            <p>Fikir üret</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages will appear here -->
+                <div class="messages-list" id="messagesList"></div>
+            </div>
+
+            <footer class="input-area">
+                <div class="input-wrapper">
+                    <div id="attachmentPreview" class="attachment-preview-container"></div>
+                    <div class="input-container">
+                        <textarea id="userInput" placeholder="Solenzi'ye bir şey sor..." rows="1"></textarea>
+                        <div class="input-actions">
+                            <div class="left-actions">
+                                <div class="attach-wrapper">
+                                    <button class="attach-btn" id="attachMenuBtn" title="Dosya Ekle">
+                                        <span class="material-symbols-outlined">add</span>
+                                    </button>
+                                    <div class="attachment-menu" id="attachmentMenu">
+                                        <div class="attach-option" id="cameraOption">
+                                            <span class="material-symbols-outlined">photo_camera</span>
+                                            <span>Kamera</span>
+                                        </div>
+                                        <div class="attach-option" id="galleryOption">
+                                            <span class="material-symbols-outlined">image</span>
+                                            <span>Galeri</span>
+                                        </div>
+                                        <div class="attach-option" id="fileOption">
+                                            <span class="material-symbols-outlined">description</span>
+                                            <span>Dosya</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="feature-menu-wrapper">
+                                    <button class="attach-btn" id="featureMenuBtn" title="Özellikler">
+                                        <span class="material-symbols-outlined">auto_awesome</span>
+                                    </button>
+                                    <div class="attachment-menu" id="featureMenu">
+                                        <div class="attach-option" id="webSearchBtn">
+                                            <span class="material-symbols-outlined">public</span>
+                                            <div class="option-info">
+                                                <span>Web'de Ara</span>
+                                                <small>Güncel bilgiler</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                        <div class="attach-option" id="reasoningBtn">
+                                            <span class="material-symbols-outlined">psychology</span>
+                                            <div class="option-info">
+                                                <span>Derin Analiz</span>
+                                                <small>Mantıksal düşünme</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                        <div class="attach-option" id="coderBtn">
+                                            <span class="material-symbols-outlined">code</span>
+                                            <div class="option-info">
+                                                <span>Kod Yazımı</span>
+                                                <small>Teknik çözüm</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                        <div class="attach-option" id="dataBtn">
+                                            <span class="material-symbols-outlined">analytics</span>
+                                            <div class="option-info">
+                                                <span>Veri Analizi</span>
+                                                <small>Detaylı rapor</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                        <div class="attach-option" id="writerBtn">
+                                            <span class="material-symbols-outlined">history_edu</span>
+                                            <div class="option-info">
+                                                <span>Yaratıcı Yazım</span>
+                                                <small>Metin üretimi</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="feature-menu-wrapper">
+                                    <button class="attach-btn" id="visionMenuBtn" title="Görsel Araçlar">
+                                        <span class="material-symbols-outlined">image_search</span>
+                                    </button>
+                                    <div class="attachment-menu" id="visionMenu">
+                                        <div class="attach-option" id="visionAnalysisBtn">
+                                            <span class="material-symbols-outlined">visibility</span>
+                                            <div class="option-info">
+                                                <span>Görüntü Analizi</span>
+                                                <small>Resmi yorumla</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                        <div class="attach-option" id="imageGenBtn">
+                                            <span class="material-symbols-outlined">palette</span>
+                                            <div class="option-info">
+                                                <span>Görsel Oluştur</span>
+                                                <small>AI çizim yap</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                        <div class="attach-option" id="ocrBtn">
+                                            <span class="material-symbols-outlined">font_download</span>
+                                            <div class="option-info">
+                                                <span>Metin Okuma</span>
+                                                <small>OCR tarama</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                        <div class="attach-option" id="bgRemoverBtn">
+                                            <span class="material-symbols-outlined">texture</span>
+                                            <div class="option-info">
+                                                <span>Arka Plan Sil</span>
+                                                <small>Dekupe yap</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                        <div class="attach-option" id="styleTransferBtn">
+                                            <span class="material-symbols-outlined">auto_fix_high</span>
+                                            <div class="option-info">
+                                                <span>Stil Aktarımı</span>
+                                                <small>Efekt uygula</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="feature-menu-wrapper">
+                                    <button class="attach-btn" id="earthquakeMenuBtn" title="Deprem Araçları">
+                                        <span class="material-symbols-outlined">volcano</span>
+                                    </button>
+                                    <div class="attachment-menu" id="earthquakeMenu">
+                                        <div class="attach-option" id="lastEarthquakesBtn">
+                                            <span class="material-symbols-outlined">shutter_speed</span>
+                                            <div class="option-info">
+                                                <span>Son Depremler</span>
+                                                <small>Anlık sarsıntılar</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                        <div class="attach-option" id="kandilliBtn">
+                                            <span class="material-symbols-outlined">analytics</span>
+                                            <div class="option-info">
+                                                <span>Kandilli Verisi</span>
+                                                <small>Resmi istatistik</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                        <div class="attach-option" id="afadBtn">
+                                            <span class="material-symbols-outlined">emergency</span>
+                                            <div class="option-info">
+                                                <span>AFAD Verisi</span>
+                                                <small>Resmi raporlar</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                        <div class="attach-option" id="quakeAnalysisBtn">
+                                            <span class="material-symbols-outlined">query_stats</span>
+                                            <div class="option-info">
+                                                <span>Risk Analizi</span>
+                                                <small>Bölgesel sorgu</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                        <div class="attach-option" id="emergencyInfoBtn">
+                                            <span class="material-symbols-outlined">contact_emergency</span>
+                                            <div class="option-info">
+                                                <span>Acil Durum</span>
+                                                <small>Hayati bilgiler</small>
+                                            </div>
+                                            <span class="status-dot"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="main-actions">
+                                <button class="voice-btn" id="voiceBtn" title="Sesli Yaz">
+                                    <span class="material-symbols-outlined">mic</span>
+                                </button>
+                                <button class="send-btn" id="sendBtn" disabled>
+                                    <span class="material-symbols-outlined">arrow_upward</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="file" id="galleryInput" hidden accept="image/*">
+                    <input type="file" id="fileInput" hidden>
+                    <p class="disclaimer">Solenz AI hatalı bilgiler sunabilir, önemli yanıtları kontrol et.</p>
+                </div>
+            </footer>
+
+            <!-- Camera Modal -->
+            <div class="custom-modal" id="cameraModal">
+                <div class="modal-overlay"></div>
+                <div class="modal-card camera-card">
+                    <div class="modal-header">
+                        <h3>Fotoğraf Çek</h3>
+                        <button class="close-modal-btn" id="closeCameraModal">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <video id="cameraVideo" autoplay playsinline style="width: 100%; border-radius: 12px; background: #000;"></video>
+                        <canvas id="cameraCanvas" style="display: none;"></canvas>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-primary" id="captureBtn">
+                            <span class="material-symbols-outlined">radio_button_checked</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme Settings Modal -->
+            <div class="custom-modal" id="themeModal">
+                <div class="modal-overlay"></div>
+                <div class="modal-card">
+                    <div class="modal-header">
+                        <h3>Tema Ayarları</h3>
+                        <button class="close-modal-btn" id="closeThemeModal">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="theme-options">
+                            <div class="theme-choice active" data-theme="light">
+                                <span class="material-symbols-outlined">light_mode</span>
+                                <span>Açık Tema</span>
+                            </div>
+                            <div class="theme-choice" data-theme="dark">
+                                <span class="material-symbols-outlined">dark_mode</span>
+                                <span>Koyu Tema</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructions Modal -->
+            <div class="custom-modal" id="instructionsModal">
+                <div class="modal-overlay"></div>
+                <div class="modal-card">
+                    <div class="modal-header">
+                        <h3>Talimatlar</h3>
+                        <button class="close-modal-btn" id="closeInstructionsModal">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <div class="modal-body instructions-body">
+                        <div class="instruction-item">
+                            <span class="material-symbols-outlined">edit</span>
+                            <div>
+                                <strong>Mesaj Düzenleme:</strong>
+                                <p>Gönderdiğiniz mesajların altındaki 'Düzenle' butonuna basarak mesajınızı güncelleyebilirsiniz.</p>
+                            </div>
+                        </div>
+                        <div class="instruction-item">
+                            <span class="material-symbols-outlined">zoom_in</span>
+                            <div>
+                                <strong>Fotoğraf İnceleme:</strong>
+                                <p>Hem chatteki hem de göndermeden önceki fotoğraflara tıklayarak tam ekran görebilirsiniz.</p>
+                            </div>
+                        </div>
+                        <div class="instruction-item">
+                            <span class="material-symbols-outlined">terminal</span>
+                            <div>
+                                <strong>Sistem Komutu:</strong>
+                                <p>Üst menüdeki terminal simgesine tıklayarak AI'ın karakterini belirleyebilirsiniz.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
