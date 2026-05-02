@@ -397,10 +397,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('click', (e) => {
-        if (e.target.closest('.custom-modal')) return;
-        if (e.target.closest('.attach-wrapper') || e.target.closest('.feature-menu-wrapper')) return;
+        // Modalların içindeki tıklamaları yoksay
+        if (e.target.closest('.modal-card')) return;
         
-        [userMenuDropdown, modelDropdown, roleDropdown, moreDropdown, getEl('attachmentMenu'), getEl('featureMenu'), getEl('visionMenu'), getEl('earthquakeMenu')].forEach(el => el?.classList.remove('active'));
+        // Eğer bir butona veya dropdown içeriğine tıklanmadıysa tüm dropdownları kapat
+        if (!e.target.closest('.model-selector-container') && 
+            !e.target.closest('.role-selector-container') && 
+            !e.target.closest('.more-menu-container') && 
+            !e.target.closest('.attach-wrapper') && 
+            !e.target.closest('.feature-menu-wrapper') && 
+            !e.target.closest('.user-profile')) {
+            
+            [userMenuDropdown, modelDropdown, roleDropdown, moreDropdown, 
+             getEl('attachmentMenu'), getEl('featureMenu'), 
+             getEl('visionMenu'), getEl('earthquakeMenu')].forEach(el => el?.classList.remove('active'));
+        }
     });
 
     // --- New Modal & Theme Listeners ---
