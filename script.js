@@ -302,6 +302,19 @@ document.addEventListener('DOMContentLoaded', () => {
     addSafeListener('sendBtn', 'click', sendMessage);
     addSafeListener('newChatSidebarBtn', 'click', startNewChat);
     addSafeListener('newChatTopBtn', 'click', startNewChat);
+    addSafeListener('searchBtn', 'click', () => alert('Arama özelliği yakında eklenecek!'));
+    addSafeListener('shareBtn', 'click', () => {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Solenz AI',
+                text: 'Solenzi ile harika bir sohbet başlattım!',
+                url: window.location.href
+            }).catch(console.error);
+        } else {
+            alert('Sohbet linki kopyalandı!');
+            navigator.clipboard.writeText(window.location.href);
+        }
+    });
     addSafeListener('menuToggle', 'click', () => { sidebar?.classList.toggle('active'); sidebarOverlay?.classList.toggle('active'); });
     addSafeListener('sidebarOverlay', 'click', () => { sidebar?.classList.remove('active'); sidebarOverlay?.classList.remove('active'); });
 
