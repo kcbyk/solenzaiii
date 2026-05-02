@@ -6,27 +6,39 @@
     --accent-color: #d97757;
     --border-color: #e5e2da;
     --input-bg: #ffffff;
-    --message-bot-bg: #f0eee9;
+    --message-bot-bg: #f2f1ee;
     --message-user-bg: transparent;
-    --sidebar-width: 260px;
+    --sidebar-width: 280px;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
 }
 
-[data-theme="dark"] {
-    --bg-primary: #1a1a1a;
-    --bg-sidebar: #242424;
-    --text-primary: #e0e0e0;
+body[data-theme="dark"] {
+    --bg-primary: #121212;
+    --bg-sidebar: #1a1a1a;
+    --text-primary: #f5f5f5;
     --text-secondary: #a0a0a0;
-    --border-color: #333333;
-    --input-bg: #2d2d2d;
-    --message-bot-bg: #242424;
+    --border-color: #2a2a2a;
+    --input-bg: #1e1e1e;
+    --message-bot-bg: #1a1a1a;
     --message-user-bg: transparent;
 }
+
+[data-theme="dark"] .welcome-screen h1 { color: #fff; }
+[data-theme="dark"] .btn-secondary { background: #2a2a2a; border-color: #3a3a3a; color: #eee; }
+[data-theme="dark"] .suggestion-card { background: #1a1a1a; }
+[data-theme="dark"] .input-container { background: #1a1a1a; }
+[data-theme="dark"] .modal-card { background: #1a1a1a; }
+[data-theme="dark"] .attachment-menu, [data-theme="dark"] .model-dropdown, [data-theme="dark"] .role-dropdown, [data-theme="dark"] .more-dropdown, [data-theme="dark"] .user-menu-dropdown { background: #1e1e1e; }
+[data-theme="dark"] .history-item:hover, [data-theme="dark"] .history-item.active { background: #2a2a2a; }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
     font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -175,6 +187,7 @@ body {
     justify-content: center;
     font-weight: 600;
     flex-shrink: 0;
+    font-size: 14px;
 }
 
 .user-profile {
@@ -618,43 +631,75 @@ body {
 .message {
     display: flex;
     flex-direction: column;
-    margin-bottom: 40px;
+    margin-bottom: 24px;
     animation: fadeIn 0.3s ease-out;
     position: relative;
     width: 100%;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.message-wrapper {
+    display: flex;
+    gap: 16px;
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 16px;
 }
 
-.msg-avatar {
-    width: 36px;
-    height: 36px;
+.message.bot .message-wrapper {
+    background-color: var(--message-bot-bg);
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+}
+
+.message.user .message-wrapper {
+    background-color: var(--accent-color);
+    color: white;
+    border-bottom-right-radius: 4px;
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.message.user .msg-content {
+    color: white;
+}
+
+.message.user .avatar {
+    background-color: rgba(255,255,255,0.2);
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    background-color: var(--accent-color);
+    color: white;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-weight: 600;
     flex-shrink: 0;
+    font-size: 14px;
 }
 
-.message.bot .msg-avatar {
-    background-color: var(--accent-color);
-    color: white;
+.msg-content {
+    flex: 1;
+    font-size: 15px;
+    line-height: 1.5;
+    min-width: 0;
+    word-wrap: break-word;
 }
 
-.message.user .msg-avatar {
-    background-color: #e5e2da;
-    color: var(--text-secondary);
+.msg-content p {
+    margin-bottom: 8px;
 }
 
-.message.user {
-    background-color: var(--message-user-bg);
-    align-self: flex-end;
-    border-bottom-right-radius: 4px;
-    flex-direction: column;
-    align-items: flex-end;
+.msg-content p:last-child {
+    margin-bottom: 0;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .message-actions {
@@ -709,10 +754,10 @@ body {
 
 .msg-content {
     flex: 1;
-    font-size: 16px;
-    line-height: 1.6;
-    color: var(--text-primary);
+    font-size: 15px;
+    line-height: 1.5;
     min-width: 0;
+    word-wrap: break-word;
 }
 
 .msg-content p {
@@ -1656,8 +1701,13 @@ textarea {
         margin-bottom: 24px;
     }
 
+    .message-wrapper {
+        max-width: 95%;
+        padding: 10px 14px;
+    }
+
     .msg-content {
-        font-size: 15px;
+        font-size: 14px;
     }
 
     /* Giriş Alanı İyileştirmeleri */

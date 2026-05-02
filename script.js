@@ -258,7 +258,60 @@ document.addEventListener('DOMContentLoaded', () => {
     addSafeListener('visionMenuBtn', 'click', (e) => { e.stopPropagation(); getEl('visionMenu')?.classList.toggle('active'); });
     addSafeListener('earthquakeMenuBtn', 'click', (e) => { e.stopPropagation(); getEl('earthquakeMenu')?.classList.toggle('active'); });
 
-    document.addEventListener('click', () => {
+    // --- New Modal & Theme Listeners ---
+    const openModal = (id) => getEl(id)?.classList.add('active');
+    const closeModal = (id) => getEl(id)?.classList.remove('active');
+
+    addSafeListener('themeSettingsOption', 'click', () => openModal('themeModal'));
+    addSafeListener('closeThemeModal', 'click', () => closeModal('themeModal'));
+    addSafeListener('instructionsOption', 'click', () => openModal('instructionsModal'));
+    addSafeListener('closeInstructionsModal', 'click', () => closeModal('instructionsModal'));
+    addSafeListener('promptModalBtn', 'click', () => openModal('promptModal'));
+    addSafeListener('closePromptModal', 'click', () => closeModal('promptModal'));
+    addSafeListener('openProfileBtn', 'click', () => {
+        const user = auth.currentUser;
+        if (user) {
+            getEl('profileNameText').textContent = user.displayName || 'İsimsiz';
+            getEl('profileEmailText').textContent = user.email;
+            getEl('profileAvatarLarge').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
+        }
+        openModal('profileModal');
+    });
+    addSafeListener('closeProfileModal', 'click', () => closeModal('profileModal'));
+    addSafeListener('closeProfileBtn', 'click', () => closeModal('profileModal'));
+
+    // Theme Switcher Logic
+    const themeChoices = document.querySelectorAll('.theme-choice');
+    const savedTheme = localStorage.getItem('solenz_theme') || 'light';
+    document.body.setAttribute('data-theme', savedTheme);
+    themeChoices.forEach(choice => {
+        if (choice.dataset.theme === savedTheme) choice.classList.add('active');
+        choice.addEventListener('click', () => {
+            const theme = choice.dataset.theme;
+            document.body.setAttribute('data-theme', theme);
+            localStorage.setItem('solenz_theme', theme);
+            themeChoices.forEach(c => c.classList.remove('active'));
+            choice.classList.add('active');
+            setTimeout(() => closeModal('themeModal'), 300);
+        });
+    });
+
+    // Suggestion Cards Logic
+    document.querySelectorAll('.suggestion-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const text = card.querySelector('p').textContent;
+            if (userInput) {
+                userInput.value = text;
+                userInput.dispatchEvent(new Event('input'));
+                sendMessage();
+            }
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-overlay')) {
+            document.querySelectorAll('.custom-modal').forEach(m => m.classList.remove('active'));
+        }
         [userMenuDropdown, modelDropdown, roleDropdown, moreDropdown, getEl('attachmentMenu'), getEl('featureMenu'), getEl('visionMenu'), getEl('earthquakeMenu')].forEach(el => el?.classList.remove('active'));
     });
 
