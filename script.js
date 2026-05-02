@@ -280,10 +280,49 @@ document.addEventListener('DOMContentLoaded', () => {
     // modelSelectorBtn listener moved above for mobile history logic
     addSafeListener('roleMenuBtn', 'click', (e) => { e.stopPropagation(); roleDropdown?.classList.toggle('active'); });
     addSafeListener('moreMenuBtn', 'click', (e) => { e.stopPropagation(); moreDropdown?.classList.toggle('active'); });
-    addSafeListener('attachMenuBtn', 'click', (e) => { e.stopPropagation(); getEl('attachmentMenu')?.classList.toggle('active'); });
-    addSafeListener('featureMenuBtn', 'click', (e) => { e.stopPropagation(); getEl('featureMenu')?.classList.toggle('active'); });
-    addSafeListener('visionMenuBtn', 'click', (e) => { e.stopPropagation(); getEl('visionMenu')?.classList.toggle('active'); });
-    addSafeListener('earthquakeMenuBtn', 'click', (e) => { e.stopPropagation(); getEl('earthquakeMenu')?.classList.toggle('active'); });
+    addSafeListener('attachMenuBtn', 'click', (e) => { 
+        e.preventDefault();
+        e.stopPropagation(); 
+        const menu = getEl('attachmentMenu');
+        document.querySelectorAll('.attachment-menu, .model-dropdown, .role-dropdown, .more-dropdown, .user-menu-dropdown').forEach(el => {
+            if (el !== menu) el.classList.remove('active');
+        });
+        menu?.classList.toggle('active'); 
+    });
+    addSafeListener('featureMenuBtn', 'click', (e) => { 
+        e.preventDefault();
+        e.stopPropagation(); 
+        const menu = getEl('featureMenu');
+        document.querySelectorAll('.attachment-menu, .model-dropdown, .role-dropdown, .more-dropdown, .user-menu-dropdown').forEach(el => {
+            if (el !== menu) el.classList.remove('active');
+        });
+        menu?.classList.toggle('active'); 
+    });
+    addSafeListener('visionMenuBtn', 'click', (e) => { 
+        e.preventDefault();
+        e.stopPropagation(); 
+        const menu = getEl('visionMenu');
+        document.querySelectorAll('.attachment-menu, .model-dropdown, .role-dropdown, .more-dropdown, .user-menu-dropdown').forEach(el => {
+            if (el !== menu) el.classList.remove('active');
+        });
+        menu?.classList.toggle('active'); 
+    });
+    addSafeListener('earthquakeMenuBtn', 'click', (e) => { 
+        e.preventDefault();
+        e.stopPropagation(); 
+        const menu = getEl('earthquakeMenu');
+        document.querySelectorAll('.attachment-menu, .model-dropdown, .role-dropdown, .more-dropdown, .user-menu-dropdown').forEach(el => {
+            if (el !== menu) el.classList.remove('active');
+        });
+        menu?.classList.toggle('active'); 
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.custom-modal')) return;
+        if (e.target.closest('.attach-wrapper') || e.target.closest('.feature-menu-wrapper')) return;
+        
+        [userMenuDropdown, modelDropdown, roleDropdown, moreDropdown, getEl('attachmentMenu'), getEl('featureMenu'), getEl('visionMenu'), getEl('earthquakeMenu')].forEach(el => el?.classList.remove('active'));
+    });
 
     // --- New Modal & Theme Listeners ---
     const openModal = (id) => getEl(id)?.classList.add('active');
@@ -333,13 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 sendMessage();
             }
         });
-    });
-
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal-overlay')) {
-            document.querySelectorAll('.custom-modal').forEach(m => m.classList.remove('active'));
-        }
-        [userMenuDropdown, modelDropdown, roleDropdown, moreDropdown, getEl('attachmentMenu'), getEl('featureMenu'), getEl('visionMenu'), getEl('earthquakeMenu')].forEach(el => el?.classList.remove('active'));
     });
 
     // Mobile Keyboard Adjustment

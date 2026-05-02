@@ -359,6 +359,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background-color: var(--bg-primary);
+    z-index: 1000;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .menu-toggle {
@@ -1713,6 +1718,10 @@ textarea {
     .top-nav {
         padding: 0 12px;
         height: 56px;
+        position: sticky;
+        top: 0;
+        background-color: var(--bg-primary);
+        z-index: 1000;
         border-bottom: 1px solid var(--border-color);
     }
 
