@@ -16,7 +16,11 @@
 <body>
     <!-- Auth Screen -->
     <div class="auth-screen" id="authScreen">
-        <div class="auth-card">
+        <div id="authLoading" class="auth-loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Giriş yapılıyor...</p>
+        </div>
+        <div class="auth-card" id="authCard">
             <div class="auth-header">
                 <div class="auth-logo">S</div>
                 <h1>Solenzi'ye Hoş Geldin</h1>

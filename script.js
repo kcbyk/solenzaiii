@@ -20,7 +20,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Auth Elements
     const authScreen = getEl('authScreen');
+    const authCard = getEl('authCard');
+    const authLoading = getEl('authLoading');
     const appLayout = getEl('appLayout');
+
+    function showLoading() {
+        if (authCard) authCard.style.display = 'none';
+        if (authLoading) authLoading.style.display = 'flex';
+    }
+
+    function showAuthCard() {
+        if (authCard) authCard.style.display = 'block';
+        if (authLoading) authLoading.style.display = 'none';
+    }
+
+    // Auth durumuna göre ekranı ayarla
+    function handleAuthState(user, isInitial = false) {
+        if (user) {
+            const isGoogle = user.providerData.some(p => p.providerId === 'google.com');
+            if (user.emailVerified || isGoogle) {
+                if (authScreen) authScreen.style.display = 'none';
+                if (appLayout) { 
+                    appLayout.style.display = 'flex'; 
+                    appLayout.classList.add('active'); 
+                }
+                
+                const nDisp = getEl('userNameDisplay'); 
+                const eDisp = getEl('userEmailDisplay'); 
+                const av = getEl('userAvatar');
+                
+                if (nDisp) nDisp.textContent = user.displayName || 'Kullanıcı';
+                if (eDisp) eDisp.textContent = user.email;
+                if (av) av.textContent = (user.displayName || user.email).charAt(0).toUpperCase();
+                
+                loadUserChats(user.uid);
+            } else {
+                if (!isInitial) {
+                    alert('Lütfen e-postanızı doğrulayın.');
+                    auth.signOut();
+                }
+                showAuthCard();
+                if (authScreen) authScreen.style.display = 'flex';
+                if (appLayout) appLayout.style.display = 'none';
+            }
+        } else {
+            showAuthCard();
+            if (authScreen) authScreen.style.display = 'flex';
+            if (appLayout) { 
+                appLayout.style.display = 'none'; 
+                appLayout.classList.remove('active'); 
+            }
+            startNewChat();
+        }
+    }
     const loginForm = getEl('loginForm');
     const registerForm = getEl('registerForm');
     const loginEmail = getEl('loginEmail');
@@ -231,8 +283,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     addSafeListener('googleLogin', 'click', async () => {
-        try { if (window.innerWidth <= 768) await auth.signInWithRedirect(googleProvider); else await auth.signInWithPopup(googleProvider); }
-        catch (e) { alert('Google hatası: ' + e.message); }
+        try { 
+            showLoading();
+            if (window.innerWidth <= 768) {
+                await auth.signInWithRedirect(googleProvider); 
+            } else {
+                const res = await auth.signInWithPopup(googleProvider);
+                if (res.user) handleAuthState(res.user, false);
+            }
+        }
+        catch (e) { 
+            showAuthCard();
+            alert('Google hatası: ' + e.message); 
+        }
     });
 
     addSafeListener('logoutBtn', 'click', () => auth.signOut());
@@ -403,28 +466,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 6. Auth Observer ---
+    let isInitialAuthCheck = true;
+
+    // Sayfa ilk açıldığında kontrol sürerken loading göster
+    showLoading();
+
     auth.onAuthStateChanged(user => {
-        console.log("Auth:", user ? user.email : "Yok");
-        if (user) {
-            const isGoogle = user.providerData.some(p => p.providerId === 'google.com');
-            if (user.emailVerified || isGoogle) {
-                if (authScreen) authScreen.style.display = 'none';
-                if (appLayout) { appLayout.style.display = 'flex'; appLayout.classList.add('active'); }
-                const nDisp = getEl('userNameDisplay'); const eDisp = getEl('userEmailDisplay'); const av = getEl('userAvatar');
-                if (nDisp) nDisp.textContent = user.displayName || 'Kullanıcı';
-                if (eDisp) eDisp.textContent = user.email;
-                if (av) av.textContent = (user.displayName || user.email).charAt(0).toUpperCase();
-                loadUserChats(user.uid);
-            } else {
-                if (authScreen) authScreen.style.display = 'flex';
-                if (appLayout) appLayout.style.display = 'none';
-            }
-        } else {
-            if (authScreen) authScreen.style.display = 'flex';
-            if (appLayout) { appLayout.style.display = 'none'; appLayout.classList.remove('active'); }
-            startNewChat();
-        }
+        console.log("Auth Durumu Değişti:", user ? user.email : "Giriş yapılmamış");
+        handleAuthState(user, isInitialAuthCheck);
+        isInitialAuthCheck = false;
     });
 
-    auth.getRedirectResult().catch(e => console.error("Google error:", e));
+    // Mobil yönlendirme sonucunu yakala
+    auth.getRedirectResult()
+        .then((result) => {
+            if (result && result.user) {
+                console.log("Yönlendirme ile giriş başarılı:", result.user.email);
+                handleAuthState(result.user, false);
+            }
+        })
+        .catch((error) => {
+            showAuthCard();
+            console.error("Yönlendirme hatası:", error);
+            if (error.code === 'auth/unauthorized-domain') {
+                alert("Hata: Bu alan adı Firebase panelinde yetkilendirilmemiş. Lütfen Firebase Console -> Authentication -> Settings -> Authorized Domains kısmına '" + window.location.hostname + "' adresini ekleyin.");
+            } else if (error.code !== 'auth/popup-closed-by-user') {
+                alert("Giriş yapılırken bir sorun oluştu: " + error.message);
+            }
+        });
 });
