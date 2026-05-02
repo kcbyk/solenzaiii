@@ -242,6 +242,33 @@ document.addEventListener('DOMContentLoaded', () => {
     addSafeListener('menuToggle', 'click', () => { sidebar?.classList.toggle('active'); sidebarOverlay?.classList.toggle('active'); });
     addSafeListener('sidebarOverlay', 'click', () => { sidebar?.classList.remove('active'); sidebarOverlay?.classList.remove('active'); });
 
+    // Fullscreen Logic
+    addSafeListener('fullscreenBtn', 'click', () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+            });
+            getEl('fullscreenBtn').querySelector('span').textContent = 'fullscreen_exit';
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+                getEl('fullscreenBtn').querySelector('span').textContent = 'fullscreen';
+            }
+        }
+    });
+
+    // Mobile History Trigger (via Solenz Core)
+    addSafeListener('modelSelectorBtn', 'click', (e) => { 
+        if (window.innerWidth <= 768) {
+            e.stopPropagation();
+            sidebar?.classList.toggle('active');
+            sidebarOverlay?.classList.toggle('active');
+        } else {
+            e.stopPropagation(); 
+            modelDropdown?.classList.toggle('active'); 
+        }
+    });
+
     // Feature Toggles
     addSafeListener('webSearchBtn', 'click', function() { isWebSearchActive = !isWebSearchActive; this.classList.toggle('active', isWebSearchActive); });
     addSafeListener('reasoningBtn', 'click', function() { isReasoningActive = !isReasoningActive; this.classList.toggle('active', isReasoningActive); });
@@ -250,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dropdowns
     addSafeListener('userProfileBtn', 'click', (e) => { e.stopPropagation(); userMenuDropdown?.classList.toggle('active'); });
-    addSafeListener('modelSelectorBtn', 'click', (e) => { e.stopPropagation(); modelDropdown?.classList.toggle('active'); });
+    // modelSelectorBtn listener moved above for mobile history logic
     addSafeListener('roleMenuBtn', 'click', (e) => { e.stopPropagation(); roleDropdown?.classList.toggle('active'); });
     addSafeListener('moreMenuBtn', 'click', (e) => { e.stopPropagation(); moreDropdown?.classList.toggle('active'); });
     addSafeListener('attachMenuBtn', 'click', (e) => { e.stopPropagation(); getEl('attachmentMenu')?.classList.toggle('active'); });
