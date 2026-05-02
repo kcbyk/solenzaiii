@@ -485,10 +485,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const keyboardHeight = windowHeight - viewportHeight;
             
             if (keyboardHeight > 50) { // Keyboard is likely open
-                document.body.style.height = `${viewportHeight}px`;
-                document.querySelector('.input-area').scrollIntoView({ behavior: 'smooth', block: 'end' });
+                // Sadece app-layout yüksekliğini kısıtla, body sabit kalsın
+                appLayout.style.height = `${viewportHeight}px`;
+                // Mesaj listesini aşağı kaydır ama sayfa scroll yapmasın
+                setTimeout(() => {
+                    messagesList.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }, 100);
             } else {
-                document.body.style.height = '100vh';
+                appLayout.style.height = '100%';
             }
         });
     }
@@ -496,8 +500,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (userInput) {
         userInput.addEventListener('focus', () => {
             if (window.innerWidth <= 768) {
+                // scrollIntoView bazen sayfa kaymasına neden olur, o yüzden sadece mesajları kaydırıyoruz
                 setTimeout(() => {
-                    document.querySelector('.input-area').scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    messagesList.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
                 }, 300);
             }
         });
