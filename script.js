@@ -342,7 +342,30 @@ document.addEventListener('DOMContentLoaded', () => {
         [userMenuDropdown, modelDropdown, roleDropdown, moreDropdown, getEl('attachmentMenu'), getEl('featureMenu'), getEl('visionMenu'), getEl('earthquakeMenu')].forEach(el => el?.classList.remove('active'));
     });
 
+    // Mobile Keyboard Adjustment
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            const viewportHeight = window.visualViewport.height;
+            const windowHeight = window.innerHeight;
+            const keyboardHeight = windowHeight - viewportHeight;
+            
+            if (keyboardHeight > 50) { // Keyboard is likely open
+                document.body.style.height = `${viewportHeight}px`;
+                document.querySelector('.input-area').scrollIntoView({ behavior: 'smooth', block: 'end' });
+            } else {
+                document.body.style.height = '100vh';
+            }
+        });
+    }
+
     if (userInput) {
+        userInput.addEventListener('focus', () => {
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    document.querySelector('.input-area').scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }, 300);
+            }
+        });
         userInput.addEventListener('input', () => { userInput.style.height = 'auto'; userInput.style.height = (userInput.scrollHeight) + 'px'; if (sendBtn) sendBtn.disabled = userInput.value.trim() === ''; });
         userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
     }
