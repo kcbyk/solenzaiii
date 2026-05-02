@@ -215,6 +215,7 @@ body {
 
 .sidebar-footer {
     padding: 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--border-color);
     position: relative;
 }
@@ -805,6 +806,7 @@ body {
 /* Input Area */
 .input-area {
     padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
     display: flex;
     justify-content: center;
 }
@@ -1780,6 +1782,7 @@ textarea {
     /* Giriş Alanı İyileştirmeleri */
     .input-area {
         padding: 8px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
     }
 
     .input-wrapper {
