@@ -341,8 +341,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Dropdowns
     addSafeListener('userProfileBtn', 'click', (e) => { e.stopPropagation(); userMenuDropdown?.classList.toggle('active'); });
     // modelSelectorBtn listener moved above for mobile history logic
-    addSafeListener('roleMenuBtn', 'click', (e) => { e.stopPropagation(); roleDropdown?.classList.toggle('active'); });
-    addSafeListener('moreMenuBtn', 'click', (e) => { e.stopPropagation(); moreDropdown?.classList.toggle('active'); });
+    addSafeListener('roleMenuBtn', 'click', (e) => { 
+        e.preventDefault();
+        e.stopPropagation(); 
+        const menu = getEl('roleDropdown');
+        document.querySelectorAll('.attachment-menu, .model-dropdown, .role-dropdown, .more-dropdown, .user-menu-dropdown').forEach(el => {
+            if (el !== menu) el.classList.remove('active');
+        });
+        menu?.classList.toggle('active'); 
+    });
+    addSafeListener('moreMenuBtn', 'click', (e) => { 
+        e.preventDefault();
+        e.stopPropagation(); 
+        const menu = getEl('moreDropdown');
+        document.querySelectorAll('.attachment-menu, .model-dropdown, .role-dropdown, .more-dropdown, .user-menu-dropdown').forEach(el => {
+            if (el !== menu) el.classList.remove('active');
+        });
+        menu?.classList.toggle('active'); 
+    });
     addSafeListener('attachMenuBtn', 'click', (e) => { 
         e.preventDefault();
         e.stopPropagation(); 
