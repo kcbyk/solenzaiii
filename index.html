@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Solenz AI</title>
+    <!-- Google Fonts: Google Sans & Inter -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+<body data-theme="light">
+    <!-- Auth Layer -->
+    <div id="authScreen" class="auth-screen">
+        <div id="authLoading" class="loading-overlay" style="display: none;">
+            <div class="google-spinner"></div>
+        </div>
+        <div class="auth-container">
+            <div class="auth-brand">
+                <span class="material-symbols-outlined logo-icon">auto_awesome</span>
+                <h1>Solenz AI</h1>
+            </div>
+            <div class="auth-box">
+                <form id="loginForm" class="auth-form">
+                    <input type="email" id="loginEmail" placeholder="E-posta" required>
+                    <input type="password" id="loginPass" placeholder="Şifre" required>
+                    <button type="submit" class="primary-btn">Giriş Yap</button>
+                    <p class="switch-text">Hesabın yok mu? <a href="#" id="showRegister">Kayıt Ol</a></p>
+                </form>
+                <form id="registerForm" class="auth-form" style="display: none;">
+                    <input type="text" id="regName" placeholder="Ad Soyad" required>
+                    <input type="email" id="regEmail" placeholder="E-posta" required>
+                    <input type="password" id="regPass" placeholder="Şifre" required>
+                    <button type="submit" class="primary-btn">Kayıt Ol</button>
+                    <p class="switch-text">Zaten üye misin? <a href="#" id="showLogin">Giriş Yap</a></p>
+                </form>
+                <div class="divider"><span>veya</span></div>
+                <button id="googleBtn" class="google-btn">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" alt="Google">
+                    Google ile Devam Et
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Layer -->
+    <div id="appLayout" class="app-layout" style="display: none;">
+        <!-- Navigation Drawer (Gemini Sidebar) -->
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-top">
+                <button id="menuBtn" class="icon-btn menu-toggle">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <button id="newChatBtn" class="new-chat-btn">
+                    <span class="material-symbols-outlined">add</span>
+                    <span class="btn-text">Yeni Sohbet</span>
+                </button>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="history-section">
+                    <h3 class="section-title">Son Sohbetler</h3>
+                    <div id="chatHistoryList" class="history-list">
+                        <!-- History items injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-bottom">
+                <div id="userProfile" class="user-profile">
+                    <div id="userAvatar" class="avatar">S</div>
+                    <div class="user-info">
+                        <span id="userName" class="username">Kullanıcı</span>
+                        <span id="userEmail" class="email">...</span>
+                    </div>
+                </div>
+                <div class="nav-links">
+                    <button id="themeToggle" class="nav-item">
+                        <span class="material-symbols-outlined">palette</span>
+                        <span class="link-text">Tema Değiştir</span>
+                    </button>
+                    <button id="logoutBtn" class="nav-item logout">
+                        <span class="material-symbols-outlined">logout</span>
+                        <span class="link-text">Çıkış Yap</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+        <!-- Main Chat Area -->
+        <main class="chat-area">
+            <header class="chat-header">
+                <div class="header-left">
+                    <button id="mobileMenuBtn" class="icon-btn mobile-only">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                    <div class="model-selector">
+                        <span class="model-name">Solenz Core 1.0</span>
+                        <span class="material-symbols-outlined">expand_more</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button id="fullscreenBtn" class="icon-btn">
+                        <span class="material-symbols-outlined">fullscreen</span>
+                    </button>
+                </div>
+            </header>
+
+            <div id="chatContainer" class="chat-container">
+                <!-- Welcome Screen -->
+                <div id="welcomeScreen" class="welcome-screen">
+                    <h2 class="welcome-title">Merhaba, sana nasıl yardımcı olabilirim?</h2>
+                    <div class="suggestion-cards">
+                        <div class="card" onclick="quickAsk('Haftalık yemek planı yap')">
+                            <p>Haftalık yemek planı yap</p>
+                            <span class="material-symbols-outlined">restaurant</span>
+                        </div>
+                        <div class="card" onclick="quickAsk('E-posta taslağı hazırla')">
+                            <p>E-posta taslağı hazırla</p>
+                            <span class="material-symbols-outlined">mail</span>
+                        </div>
+                        <div class="card mobile-hide" onclick="quickAsk('Kodumu analiz et')">
+                            <p>Kodumu analiz et</p>
+                            <span class="material-symbols-outlined">code</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Messages -->
+                <div id="messagesList" class="messages-list"></div>
+            </div>
+
+            <!-- Input Bar (Gemini Style) -->
+            <footer class="input-area">
+                <div class="input-container">
+                    <div class="input-wrapper">
+                        <button id="attachBtn" class="icon-btn">
+                            <span class="material-symbols-outlined">add_circle</span>
+                        </button>
+                        <textarea id="userInput" placeholder="Buraya yazın..." rows="1"></textarea>
+                        <div class="input-actions">
+                            <button id="voiceBtn" class="icon-btn">
+                                <span class="material-symbols-outlined">mic</span>
+                            </button>
+                            <button id="sendBtn" class="send-btn" disabled>
+                                <span class="material-symbols-outlined">arrow_upward</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="disclaimer">Solenz AI hata yapabilir, bilgileri kontrol etmeyi unutma.</p>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
