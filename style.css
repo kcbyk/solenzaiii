@@ -83,8 +83,12 @@ body {
     transition: var(--transition);
 }
 
-.new-chat-btn:hover {
-    background-color: var(--hover-bg);
+.new-chat-btn:active {
+    transform: scale(0.95);
+}
+
+.icon-btn:active {
+    transform: scale(0.9);
 }
 
 .sidebar-content {
@@ -204,6 +208,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    scroll-behavior: smooth;
 }
 
 .welcome-container {
@@ -305,6 +310,69 @@ body {
 @keyframes rotate-neon {
     from { --neon-angle: 0deg; }
     to { --neon-angle: 360deg; }
+}
+
+/* --- Attachment Menu --- */
+.attachment-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.attachment-menu {
+    position: absolute;
+    bottom: calc(100% + 15px);
+    left: 0;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 8px;
+    min-width: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    z-index: 1000;
+    animation: menuFadeUp 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes menuFadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.attachment-menu.hidden {
+    display: none;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+    width: 100%;
+}
+
+.menu-item:hover {
+    background-color: var(--hover-bg);
+}
+
+.menu-item .material-symbols-rounded {
+    font-size: 20px;
+    color: var(--accent-blue);
+}
+
+.attach-btn.active {
+    background-color: var(--hover-bg);
+    transform: rotate(45deg);
 }
 
 .input-container {

@@ -27,7 +27,8 @@ const updateElements = () => {
     elements.userProfileBtn = getEl('userProfileBtn');
     elements.footerBtns = document.querySelectorAll('.footer-btn');
     elements.suggestionCards = document.querySelectorAll('.suggestion-card');
-    elements.attachBtn = document.querySelector('.attach-btn');
+    elements.attachBtn = getEl('attachBtn');
+    elements.attachmentMenu = getEl('attachmentMenu');
     elements.imageBtn = getEl('imageBtn');
     elements.micBtn = getEl('micBtn');
 };
@@ -97,8 +98,32 @@ const setupEventListeners = () => {
 
     // Attach, Image, Mic Buttons
     if (elements.attachBtn) {
-        elements.attachBtn.onclick = () => alert("Dosya ekleme yakında eklenecek!");
+        elements.attachBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleAttachmentMenu();
+        };
     }
+
+    // Attachment Menu Items
+    const menuItems = document.querySelectorAll('.attachment-menu .menu-item');
+    menuItems.forEach(item => {
+        item.onclick = (e) => {
+            e.stopPropagation();
+            const type = item.querySelector('span:last-child').textContent;
+            alert(`${type} seçildi!`);
+            closeAttachmentMenu();
+        };
+    });
+
+    // Document-wide click to close menus
+    document.addEventListener('click', (e) => {
+        if (elements.attachmentMenu && !elements.attachmentMenu.classList.contains('hidden')) {
+            if (!elements.attachmentMenu.contains(e.target) && e.target !== elements.attachBtn) {
+                closeAttachmentMenu();
+            }
+        }
+    });
+
     if (elements.imageBtn) {
         elements.imageBtn.onclick = () => alert("Görsel analizi yakında eklenecek!");
     }
@@ -113,6 +138,18 @@ function toggleSidebar() {
     state.isSidebarOpen = !state.isSidebarOpen;
     elements.sidebar.classList.toggle('active', state.isSidebarOpen);
     elements.sidebarOverlay.classList.toggle('active', state.isSidebarOpen);
+}
+
+function toggleAttachmentMenu() {
+    const isHidden = elements.attachmentMenu.classList.toggle('hidden');
+    elements.attachBtn.classList.toggle('active', !isHidden);
+}
+
+function closeAttachmentMenu() {
+    if (elements.attachmentMenu) {
+        elements.attachmentMenu.classList.add('hidden');
+        elements.attachBtn.classList.remove('active');
+    }
 }
 
 function handleInput() {

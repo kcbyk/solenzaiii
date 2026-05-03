@@ -103,9 +103,25 @@
             <footer class="input-area">
                 <div class="input-wrapper-neon">
                     <div class="input-container">
-                        <button class="icon-btn attach-btn">
-                            <span class="material-symbols-rounded">add</span>
-                        </button>
+                        <div class="attachment-wrapper">
+                            <button id="attachBtn" class="icon-btn attach-btn">
+                                <span class="material-symbols-rounded">add</span>
+                            </button>
+                            <div id="attachmentMenu" class="attachment-menu hidden">
+                                <button class="menu-item">
+                                    <span class="material-symbols-rounded">description</span>
+                                    <span>Belge</span>
+                                </button>
+                                <button class="menu-item">
+                                    <span class="material-symbols-rounded">photo_library</span>
+                                    <span>Galeri</span>
+                                </button>
+                                <button class="menu-item">
+                                    <span class="material-symbols-rounded">camera_alt</span>
+                                    <span>Kamera</span>
+                                </button>
+                            </div>
+                        </div>
                         <textarea id="chatInput" placeholder="Buraya bir şeyler yazın..." rows="1"></textarea>
                         <div class="input-actions">
                             <button id="imageBtn" class="icon-btn">
