@@ -352,78 +352,99 @@ document.addEventListener('DOMContentLoaded', () => {
     addSafeListener('lastEarthquakesBtn', 'click', function() { isLastQuakesActive = !isLastQuakesActive; this.classList.toggle('active', isLastQuakesActive); });
 
     // Dropdowns
-    addSafeListener('userProfileBtn', 'click', (e) => { e.stopPropagation(); userMenuDropdown?.classList.toggle('active'); });
-    // modelSelectorBtn listener moved above for mobile history logic
+    const allDropdowns = [userMenuDropdown, modelDropdown, roleDropdown, moreDropdown, getEl('attachmentMenu'), getEl('featureMenu'), getEl('visionMenu'), getEl('earthquakeMenu')];
+    
+    const closeAllDropdowns = (except = null) => {
+        allDropdowns.forEach(el => {
+            if (el && el !== except) el.classList.remove('active');
+        });
+    };
+
+    addSafeListener('userProfileBtn', 'click', (e) => { 
+        e.stopPropagation(); 
+        const isActive = userMenuDropdown?.classList.contains('active');
+        closeAllDropdowns();
+        if (!isActive) userMenuDropdown?.classList.add('active');
+    });
+
+    addSafeListener('modelSelectorBtn', 'click', (e) => { 
+        e.stopPropagation();
+        if (window.innerWidth <= 768) {
+            sidebar?.classList.toggle('active');
+            sidebarOverlay?.classList.toggle('active');
+        } else {
+            const isActive = modelDropdown?.classList.contains('active');
+            closeAllDropdowns();
+            if (!isActive) modelDropdown?.classList.add('active');
+        }
+    });
+
     addSafeListener('roleMenuBtn', 'click', (e) => { 
         e.preventDefault();
         e.stopPropagation(); 
         const menu = getEl('roleDropdown');
-        document.querySelectorAll('.attachment-menu, .model-dropdown, .role-dropdown, .more-dropdown, .user-menu-dropdown').forEach(el => {
-            if (el !== menu) el.classList.remove('active');
-        });
-        menu?.classList.toggle('active'); 
+        const isActive = menu?.classList.contains('active');
+        closeAllDropdowns();
+        if (!isActive) menu?.classList.add('active');
     });
+
     addSafeListener('moreMenuBtn', 'click', (e) => { 
         e.preventDefault();
         e.stopPropagation(); 
         const menu = getEl('moreDropdown');
-        document.querySelectorAll('.attachment-menu, .model-dropdown, .role-dropdown, .more-dropdown, .user-menu-dropdown').forEach(el => {
-            if (el !== menu) el.classList.remove('active');
-        });
-        menu?.classList.toggle('active'); 
+        const isActive = menu?.classList.contains('active');
+        closeAllDropdowns();
+        if (!isActive) menu?.classList.add('active');
     });
+
     addSafeListener('attachMenuBtn', 'click', (e) => { 
         e.preventDefault();
         e.stopPropagation(); 
         const menu = getEl('attachmentMenu');
-        document.querySelectorAll('.attachment-menu, .model-dropdown, .role-dropdown, .more-dropdown, .user-menu-dropdown').forEach(el => {
-            if (el !== menu) el.classList.remove('active');
-        });
-        menu?.classList.toggle('active'); 
+        const isActive = menu?.classList.contains('active');
+        closeAllDropdowns();
+        if (!isActive) menu?.classList.add('active');
     });
+
     addSafeListener('featureMenuBtn', 'click', (e) => { 
         e.preventDefault();
         e.stopPropagation(); 
         const menu = getEl('featureMenu');
-        document.querySelectorAll('.attachment-menu, .model-dropdown, .role-dropdown, .more-dropdown, .user-menu-dropdown').forEach(el => {
-            if (el !== menu) el.classList.remove('active');
-        });
-        menu?.classList.toggle('active'); 
+        const isActive = menu?.classList.contains('active');
+        closeAllDropdowns();
+        if (!isActive) menu?.classList.add('active');
     });
+
     addSafeListener('visionMenuBtn', 'click', (e) => { 
         e.preventDefault();
         e.stopPropagation(); 
         const menu = getEl('visionMenu');
-        document.querySelectorAll('.attachment-menu, .model-dropdown, .role-dropdown, .more-dropdown, .user-menu-dropdown').forEach(el => {
-            if (el !== menu) el.classList.remove('active');
-        });
-        menu?.classList.toggle('active'); 
+        const isActive = menu?.classList.contains('active');
+        closeAllDropdowns();
+        if (!isActive) menu?.classList.add('active');
     });
+
     addSafeListener('earthquakeMenuBtn', 'click', (e) => { 
         e.preventDefault();
         e.stopPropagation(); 
         const menu = getEl('earthquakeMenu');
-        document.querySelectorAll('.attachment-menu, .model-dropdown, .role-dropdown, .more-dropdown, .user-menu-dropdown').forEach(el => {
-            if (el !== menu) el.classList.remove('active');
-        });
-        menu?.classList.toggle('active'); 
+        const isActive = menu?.classList.contains('active');
+        closeAllDropdowns();
+        if (!isActive) menu?.classList.add('active');
     });
 
     document.addEventListener('click', (e) => {
         // Modalların içindeki tıklamaları yoksay
         if (e.target.closest('.modal-card')) return;
         
-        // Eğer bir butona veya dropdown içeriğine tıklanmadıysa tüm dropdownları kapat
+        // Eğer bir butona tıklanmadıysa tüm dropdownları kapat
         if (!e.target.closest('.model-selector-container') && 
             !e.target.closest('.role-selector-container') && 
             !e.target.closest('.more-menu-container') && 
             !e.target.closest('.attach-wrapper') && 
             !e.target.closest('.feature-menu-wrapper') && 
             !e.target.closest('.user-profile')) {
-            
-            [userMenuDropdown, modelDropdown, roleDropdown, moreDropdown, 
-             getEl('attachmentMenu'), getEl('featureMenu'), 
-             getEl('visionMenu'), getEl('earthquakeMenu')].forEach(el => el?.classList.remove('active'));
+            closeAllDropdowns();
         }
     });
 
