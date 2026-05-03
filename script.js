@@ -254,221 +254,142 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 5. Event Listeners ---
     const addSafeListener = (id, event, callback) => {
         const el = getEl(id);
-        if (el) el.addEventListener(event, callback);
+        if (el) {
+            // Eski listenerları temizlemek için klonlama (opsiyonel ama güvenli)
+            el.replaceWith(el.cloneNode(true));
+            const newEl = getEl(id);
+            newEl.addEventListener(event, callback);
+        }
     };
 
-    addSafeListener('toRegister', 'click', (e) => { e.preventDefault(); loginForm.style.display = 'none'; registerForm.style.display = 'block'; });
-    addSafeListener('toLogin', 'click', (e) => { e.preventDefault(); registerForm.style.display = 'none'; loginForm.style.display = 'block'; });
-    
-    addSafeListener('loginSubmit', 'click', async () => {
-        const email = loginEmail?.value.trim(); const pass = loginPass?.value.trim();
-        if (!email || !pass) return alert('Doldurun.');
-        try {
-            const res = await auth.signInWithEmailAndPassword(email, pass);
-            if (!res.user.emailVerified) { alert('E-postanızı doğrulayın.'); await auth.signOut(); }
-        } catch (e) { alert('Hata: ' + e.message); }
-    });
-
-    addSafeListener('regSubmit', 'click', async () => {
-        const name = regName?.value.trim(); const email = regEmail?.value.trim(); const pass = regPass?.value.trim();
-        if (!name || !email || !pass) return alert('Doldurun.');
-        try {
-            const res = await auth.createUserWithEmailAndPassword(email, pass);
-            await res.user.updateProfile({ displayName: name });
-            await res.user.sendEmailVerification();
-            await db.collection('users').doc(res.user.uid).set({ name, email, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-            alert('Başarılı! E-postanızı kontrol edin.');
-            await auth.signOut();
-        } catch (e) { alert('Hata: ' + e.message); }
-    });
-
-    addSafeListener('googleLogin', 'click', async () => {
-        try { 
-            showLoading();
-            if (window.innerWidth <= 768) {
-                await auth.signInWithRedirect(googleProvider); 
-            } else {
-                const res = await auth.signInWithPopup(googleProvider);
-                if (res.user) handleAuthState(res.user, false);
-            }
-        }
-        catch (e) { 
-            showAuthCard();
-            alert('Google hatası: ' + e.message); 
-        }
-    });
-
-    addSafeListener('logoutBtn', 'click', () => auth.signOut());
-    addSafeListener('sendBtn', 'click', sendMessage);
-    addSafeListener('newChatSidebarBtn', 'click', startNewChat);
-    addSafeListener('newChatTopBtn', 'click', startNewChat);
-    addSafeListener('searchBtn', 'click', () => alert('Arama özelliği yakında eklenecek!'));
-    addSafeListener('shareBtn', 'click', () => {
-        if (navigator.share) {
-            navigator.share({
-                title: 'Solenz AI',
-                text: 'Solenzi ile harika bir sohbet başlattım!',
-                url: window.location.href
-            }).catch(console.error);
-        } else {
-            alert('Sohbet linki kopyalandı!');
-            navigator.clipboard.writeText(window.location.href);
-        }
-    });
-    addSafeListener('menuToggle', 'click', () => { sidebar?.classList.toggle('active'); sidebarOverlay?.classList.toggle('active'); });
-    addSafeListener('sidebarOverlay', 'click', () => { sidebar?.classList.remove('active'); sidebarOverlay?.classList.remove('active'); });
-
-    // Fullscreen Logic
-    addSafeListener('fullscreenBtn', 'click', () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
-                console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-            });
-            getEl('fullscreenBtn').querySelector('span').textContent = 'fullscreen_exit';
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-                getEl('fullscreenBtn').querySelector('span').textContent = 'fullscreen';
-            }
-        }
-    });
-
-    // Mobile History Trigger (via Solenz Core)
-    addSafeListener('modelSelectorBtn', 'click', (e) => { 
-        if (window.innerWidth <= 768) {
-            e.stopPropagation();
-            sidebar?.classList.toggle('active');
-            sidebarOverlay?.classList.toggle('active');
-        } else {
-            e.stopPropagation(); 
-            modelDropdown?.classList.toggle('active'); 
-        }
-    });
-
-    // Feature Toggles
-    addSafeListener('webSearchBtn', 'click', function() { isWebSearchActive = !isWebSearchActive; this.classList.toggle('active', isWebSearchActive); });
-    addSafeListener('reasoningBtn', 'click', function() { isReasoningActive = !isReasoningActive; this.classList.toggle('active', isReasoningActive); });
-    addSafeListener('imageGenBtn', 'click', function() { isImageGenActive = !isImageGenActive; this.classList.toggle('active', isImageGenActive); });
-    addSafeListener('lastEarthquakesBtn', 'click', function() { isLastQuakesActive = !isLastQuakesActive; this.classList.toggle('active', isLastQuakesActive); });
-
-    // Dropdowns
-    const allDropdowns = [userMenuDropdown, modelDropdown, roleDropdown, moreDropdown, getEl('attachmentMenu'), getEl('featureMenu'), getEl('visionMenu'), getEl('earthquakeMenu')];
-    
-    const closeAllDropdowns = (except = null) => {
-        allDropdowns.forEach(el => {
-            if (el && el !== except) el.classList.remove('active');
+    // Re-select elements after cloning
+    const rebindElements = () => {
+        // Auth Forms
+        addSafeListener('toRegister', 'click', (e) => { e.preventDefault(); getEl('loginForm').style.display = 'none'; getEl('registerForm').style.display = 'block'; });
+        addSafeListener('toLogin', 'click', (e) => { e.preventDefault(); getEl('registerForm').style.display = 'none'; getEl('loginForm').style.display = 'block'; });
+        
+        addSafeListener('loginSubmit', 'click', async () => {
+            const email = getEl('loginEmail')?.value.trim(); const pass = getEl('loginPass')?.value.trim();
+            if (!email || !pass) return alert('Doldurun.');
+            try {
+                const res = await auth.signInWithEmailAndPassword(email, pass);
+                if (!res.user.emailVerified) { alert('E-postanızı doğrulayın.'); await auth.signOut(); }
+            } catch (e) { alert('Hata: ' + e.message); }
         });
+
+        addSafeListener('regSubmit', 'click', async () => {
+            const name = getEl('regName')?.value.trim(); const email = getEl('regEmail')?.value.trim(); const pass = getEl('regPass')?.value.trim();
+            if (!name || !email || !pass) return alert('Doldurun.');
+            try {
+                const res = await auth.createUserWithEmailAndPassword(email, pass);
+                await res.user.updateProfile({ displayName: name });
+                await res.user.sendEmailVerification();
+                await db.collection('users').doc(res.user.uid).set({ name, email, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                alert('Başarılı! E-postanızı kontrol edin.');
+                await auth.signOut();
+            } catch (e) { alert('Hata: ' + e.message); }
+        });
+
+        addSafeListener('googleLogin', 'click', async () => {
+            try { 
+                showLoading();
+                if (window.innerWidth <= 768) {
+                    await auth.signInWithRedirect(googleProvider); 
+                } else {
+                    const res = await auth.signInWithPopup(googleProvider);
+                    if (res.user) handleAuthState(res.user, false);
+                }
+            }
+            catch (e) { 
+                showAuthCard();
+                alert('Google hatası: ' + e.message); 
+            }
+        });
+
+        addSafeListener('logoutBtn', 'click', () => auth.signOut());
+        addSafeListener('sendBtn', 'click', sendMessage);
+        addSafeListener('newChatSidebarBtn', 'click', startNewChat);
+        addSafeListener('newChatTopBtn', 'click', startNewChat);
+        
+        addSafeListener('menuToggle', 'click', () => { 
+            getEl('sidebar')?.classList.toggle('active'); 
+            getEl('sidebarOverlay')?.classList.toggle('active'); 
+        });
+        addSafeListener('sidebarOverlay', 'click', () => { 
+            getEl('sidebar')?.classList.remove('active'); 
+            getEl('sidebarOverlay')?.classList.remove('active'); 
+        });
+
+        addSafeListener('fullscreenBtn', 'click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.error(err));
+                getEl('fullscreenBtn').querySelector('span').textContent = 'fullscreen_exit';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    getEl('fullscreenBtn').querySelector('span').textContent = 'fullscreen';
+                }
+            }
+        });
+
+        // Feature Toggles
+        addSafeListener('webSearchBtn', 'click', function() { isWebSearchActive = !isWebSearchActive; this.classList.toggle('active', isWebSearchActive); });
+        addSafeListener('reasoningBtn', 'click', function() { isReasoningActive = !isReasoningActive; this.classList.toggle('active', isReasoningActive); });
+        addSafeListener('imageGenBtn', 'click', function() { isImageGenActive = !isImageGenActive; this.classList.toggle('active', isImageGenActive); });
+        addSafeListener('lastEarthquakesBtn', 'click', function() { isLastQuakesActive = !isLastQuakesActive; this.classList.toggle('active', isLastQuakesActive); });
+
+        // Dropdowns & Special Buttons
+        const closeAll = (exceptId = null) => {
+            ['userMenuDropdown', 'modelDropdown', 'roleDropdown', 'moreDropdown', 'attachmentMenu', 'featureMenu', 'visionMenu', 'earthquakeMenu'].forEach(id => {
+                if (id !== exceptId) getEl(id)?.classList.remove('active');
+            });
+        };
+
+        addSafeListener('userProfileBtn', 'click', (e) => { e.stopPropagation(); const m = getEl('userMenuDropdown'); const act = m.classList.contains('active'); closeAll(); if(!act) m.classList.add('active'); });
+        addSafeListener('modelSelectorBtn', 'click', (e) => { 
+            e.stopPropagation(); 
+            if (window.innerWidth <= 768) {
+                getEl('sidebar')?.classList.toggle('active');
+                getEl('sidebarOverlay')?.classList.toggle('active');
+            } else {
+                const m = getEl('modelDropdown'); const act = m.classList.contains('active'); closeAll(); if(!act) m.classList.add('active');
+            }
+        });
+        addSafeListener('roleMenuBtn', 'click', (e) => { e.stopPropagation(); const m = getEl('roleDropdown'); const act = m.classList.contains('active'); closeAll(); if(!act) m.classList.add('active'); });
+        addSafeListener('moreMenuBtn', 'click', (e) => { e.stopPropagation(); const m = getEl('moreDropdown'); const act = m.classList.contains('active'); closeAll(); if(!act) m.classList.add('active'); });
+        addSafeListener('attachMenuBtn', 'click', (e) => { e.stopPropagation(); const m = getEl('attachmentMenu'); const act = m.classList.contains('active'); closeAll(); if(!act) m.classList.add('active'); });
+        addSafeListener('featureMenuBtn', 'click', (e) => { e.stopPropagation(); const m = getEl('featureMenu'); const act = m.classList.contains('active'); closeAll(); if(!act) m.classList.add('active'); });
+        addSafeListener('visionMenuBtn', 'click', (e) => { e.stopPropagation(); const m = getEl('visionMenu'); const act = m.classList.contains('active'); closeAll(); if(!act) m.classList.add('active'); });
+        addSafeListener('earthquakeMenuBtn', 'click', (e) => { e.stopPropagation(); const m = getEl('earthquakeMenu'); const act = m.classList.contains('active'); closeAll(); if(!act) m.classList.add('active'); });
+
+        // Modallar
+        addSafeListener('themeSettingsOption', 'click', () => getEl('themeModal').classList.add('active'));
+        addSafeListener('closeThemeModal', 'click', () => getEl('themeModal').classList.remove('active'));
+        addSafeListener('instructionsOption', 'click', () => getEl('instructionsModal').classList.add('active'));
+        addSafeListener('closeInstructionsModal', 'click', () => getEl('instructionsModal').classList.remove('active'));
+        addSafeListener('promptModalBtn', 'click', () => getEl('promptModal').classList.add('active'));
+        addSafeListener('closePromptModal', 'click', () => getEl('promptModal').classList.remove('active'));
+        
+        addSafeListener('openProfileBtn', 'click', () => {
+            const u = auth.currentUser;
+            if(u) {
+                getEl('profileNameText').textContent = u.displayName || 'İsimsiz';
+                getEl('profileEmailText').textContent = u.email;
+                getEl('profileAvatarLarge').textContent = (u.displayName || u.email).charAt(0).toUpperCase();
+            }
+            getEl('profileModal').classList.add('active');
+        });
+        addSafeListener('closeProfileModal', 'click', () => getEl('profileModal').classList.remove('active'));
+        addSafeListener('closeProfileBtn', 'click', () => getEl('profileModal').classList.remove('active'));
     };
 
-    addSafeListener('userProfileBtn', 'click', (e) => { 
-        e.stopPropagation(); 
-        const isActive = userMenuDropdown?.classList.contains('active');
-        closeAllDropdowns();
-        if (!isActive) userMenuDropdown?.classList.add('active');
-    });
-
-    addSafeListener('modelSelectorBtn', 'click', (e) => { 
-        e.stopPropagation();
-        if (window.innerWidth <= 768) {
-            sidebar?.classList.toggle('active');
-            sidebarOverlay?.classList.toggle('active');
-        } else {
-            const isActive = modelDropdown?.classList.contains('active');
-            closeAllDropdowns();
-            if (!isActive) modelDropdown?.classList.add('active');
-        }
-    });
-
-    addSafeListener('roleMenuBtn', 'click', (e) => { 
-        e.preventDefault();
-        e.stopPropagation(); 
-        const menu = getEl('roleDropdown');
-        const isActive = menu?.classList.contains('active');
-        closeAllDropdowns();
-        if (!isActive) menu?.classList.add('active');
-    });
-
-    addSafeListener('moreMenuBtn', 'click', (e) => { 
-        e.preventDefault();
-        e.stopPropagation(); 
-        const menu = getEl('moreDropdown');
-        const isActive = menu?.classList.contains('active');
-        closeAllDropdowns();
-        if (!isActive) menu?.classList.add('active');
-    });
-
-    addSafeListener('attachMenuBtn', 'click', (e) => { 
-        e.preventDefault();
-        e.stopPropagation(); 
-        const menu = getEl('attachmentMenu');
-        const isActive = menu?.classList.contains('active');
-        closeAllDropdowns();
-        if (!isActive) menu?.classList.add('active');
-    });
-
-    addSafeListener('featureMenuBtn', 'click', (e) => { 
-        e.preventDefault();
-        e.stopPropagation(); 
-        const menu = getEl('featureMenu');
-        const isActive = menu?.classList.contains('active');
-        closeAllDropdowns();
-        if (!isActive) menu?.classList.add('active');
-    });
-
-    addSafeListener('visionMenuBtn', 'click', (e) => { 
-        e.preventDefault();
-        e.stopPropagation(); 
-        const menu = getEl('visionMenu');
-        const isActive = menu?.classList.contains('active');
-        closeAllDropdowns();
-        if (!isActive) menu?.classList.add('active');
-    });
-
-    addSafeListener('earthquakeMenuBtn', 'click', (e) => { 
-        e.preventDefault();
-        e.stopPropagation(); 
-        const menu = getEl('earthquakeMenu');
-        const isActive = menu?.classList.contains('active');
-        closeAllDropdowns();
-        if (!isActive) menu?.classList.add('active');
-    });
+    rebindElements();
 
     document.addEventListener('click', (e) => {
-        // Modalların içindeki tıklamaları yoksay
-        if (e.target.closest('.modal-card')) return;
-        
-        // Eğer bir butona tıklanmadıysa tüm dropdownları kapat
-        if (!e.target.closest('.model-selector-container') && 
-            !e.target.closest('.role-selector-container') && 
-            !e.target.closest('.more-menu-container') && 
-            !e.target.closest('.attach-wrapper') && 
-            !e.target.closest('.feature-menu-wrapper') && 
-            !e.target.closest('.user-profile')) {
-            closeAllDropdowns();
+        if (!e.target.closest('.modal-card') && !e.target.closest('.attach-btn') && !e.target.closest('.top-action-btn') && !e.target.closest('.model-selector') && !e.target.closest('.user-profile')) {
+            ['userMenuDropdown', 'modelDropdown', 'roleDropdown', 'moreDropdown', 'attachmentMenu', 'featureMenu', 'visionMenu', 'earthquakeMenu'].forEach(id => getEl(id)?.classList.remove('active'));
         }
     });
-
-    // --- New Modal & Theme Listeners ---
-    const openModal = (id) => getEl(id)?.classList.add('active');
-    const closeModal = (id) => getEl(id)?.classList.remove('active');
-
-    addSafeListener('themeSettingsOption', 'click', () => openModal('themeModal'));
-    addSafeListener('closeThemeModal', 'click', () => closeModal('themeModal'));
-    addSafeListener('instructionsOption', 'click', () => openModal('instructionsModal'));
-    addSafeListener('closeInstructionsModal', 'click', () => closeModal('instructionsModal'));
-    addSafeListener('promptModalBtn', 'click', () => openModal('promptModal'));
-    addSafeListener('closePromptModal', 'click', () => closeModal('promptModal'));
-    addSafeListener('openProfileBtn', 'click', () => {
-        const user = auth.currentUser;
-        if (user) {
-            getEl('profileNameText').textContent = user.displayName || 'İsimsiz';
-            getEl('profileEmailText').textContent = user.email;
-            getEl('profileAvatarLarge').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
-        }
-        openModal('profileModal');
-    });
-    addSafeListener('closeProfileModal', 'click', () => closeModal('profileModal'));
-    addSafeListener('closeProfileBtn', 'click', () => closeModal('profileModal'));
 
     // Theme Switcher Logic
     const themeChoices = document.querySelectorAll('.theme-choice');
