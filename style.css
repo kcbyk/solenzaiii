@@ -895,36 +895,79 @@ body {
 
 .input-container {
     background: var(--input-bg);
-    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--border-color);
     border-radius: 16px;
     padding: 12px 16px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     position: relative;
     z-index: 10;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.3s ease;
+    /* overflow: hidden; */ /* Menülerin kapanmaması için kaldırıldı */
 }
 
-.input-container:focus-within {
-    border-color: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.1);
-    transform: translateY(-4px) scale(1.01);
+/* --- Kesintisiz Dönen Beyaz Neon Efekti (Yeni Nesil) --- */
+.input-container::before {
+    content: "";
+    position: absolute;
+    inset: -1.5px;
+    border-radius: 17px;
+    padding: 1.5px; /* Border kalınlığı */
+    background: conic-gradient(
+        from var(--neon-angle),
+        transparent 0%,
+        transparent 40%,
+        rgba(255, 255, 255, 0.8) 50%,
+        transparent 60%,
+        transparent 100%
+    );
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: neonRotate 4s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@property --neon-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+}
+
+@keyframes neonRotate {
+    from { --neon-angle: 0deg; }
+    to { --neon-angle: 360deg; }
 }
 
 [data-theme="dark"] .input-container {
     background: #1a1a1a;
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255,255,255,0.05);
 }
 
-[data-theme="dark"] .input-container:focus-within {
-    border-color: #ffffff;
-    box-shadow: 0 0 30px rgba(255, 255, 255, 0.25), 0 0 60px rgba(255, 255, 255, 0.05);
+[data-theme="dark"] .input-container::before {
+    background: conic-gradient(
+        from var(--neon-angle),
+        transparent 0%,
+        transparent 40%,
+        rgba(255, 255, 255, 0.4) 50%,
+        transparent 60%,
+        transparent 100%
+    );
 }
 
-/* Remove any old neon effects */
-.input-container::before, .input-container::after {
-    display: none !important;
+.input-container:focus-within {
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Dropdownların neonun üzerinde kalması için */
+.attachment-menu {
+    z-index: 1002 !important;
 }
 
 /* Remove old pseudo-elements */

@@ -255,16 +255,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const addSafeListener = (id, event, callback) => {
         const el = getEl(id);
         if (el) {
-            // Eski listenerları temizlemek için klonlama (opsiyonel ama güvenli)
-            el.replaceWith(el.cloneNode(true));
-            const newEl = getEl(id);
-            newEl.addEventListener(event, callback);
+            // Sadece gerekli butonlar için klonlama yapalım, her element için değil
+            // Bu sayede userInput gibi sürekli aktif olan alanlar bozulmaz
+            if (['sendBtn', 'newChatSidebarBtn', 'newChatTopBtn', 'menuToggle', 'sidebarOverlay', 'fullscreenBtn', 'webSearchBtn', 'reasoningBtn', 'imageGenBtn', 'lastEarthquakesBtn', 'userProfileBtn', 'modelSelectorBtn', 'roleMenuBtn', 'moreMenuBtn', 'attachMenuBtn', 'featureMenuBtn', 'visionMenuBtn', 'earthquakeMenuBtn'].includes(id)) {
+                const clone = el.cloneNode(true);
+                el.replaceWith(clone);
+                getEl(id).addEventListener(event, callback);
+            } else {
+                el.addEventListener(event, callback);
+            }
         }
     };
 
-    // Re-select elements after cloning
+    // Re-select elements and bind listeners
     const rebindElements = () => {
-        // Auth Forms
+        // Auth Forms (Bunlar genelde bir kez yüklenir)
         addSafeListener('toRegister', 'click', (e) => { e.preventDefault(); getEl('loginForm').style.display = 'none'; getEl('registerForm').style.display = 'block'; });
         addSafeListener('toLogin', 'click', (e) => { e.preventDefault(); getEl('registerForm').style.display = 'none'; getEl('loginForm').style.display = 'block'; });
         
@@ -332,11 +337,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Feature Toggles
-        addSafeListener('webSearchBtn', 'click', function() { isWebSearchActive = !isWebSearchActive; this.classList.toggle('active', isWebSearchActive); });
-        addSafeListener('reasoningBtn', 'click', function() { isReasoningActive = !isReasoningActive; this.classList.toggle('active', isReasoningActive); });
-        addSafeListener('imageGenBtn', 'click', function() { isImageGenActive = !isImageGenActive; this.classList.toggle('active', isImageGenActive); });
-        addSafeListener('lastEarthquakesBtn', 'click', function() { isLastQuakesActive = !isLastQuakesActive; this.classList.toggle('active', isLastQuakesActive); });
+        // Feature Toggles (Artık daha güvenli)
+        const toggleBtn = (id) => {
+            addSafeListener(id, 'click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (id === 'webSearchBtn') isWebSearchActive = !isWebSearchActive;
+                if (id === 'reasoningBtn') isReasoningActive = !isReasoningActive;
+                if (id === 'imageGenBtn') isImageGenActive = !isImageGenActive;
+                if (id === 'lastEarthquakesBtn') isLastQuakesActive = !isLastQuakesActive;
+                this.classList.toggle('active');
+            });
+        };
+
+        toggleBtn('webSearchBtn');
+        toggleBtn('reasoningBtn');
+        toggleBtn('imageGenBtn');
+        toggleBtn('lastEarthquakesBtn');
 
         // Dropdowns & Special Buttons
         const closeAll = (exceptId = null) => {
@@ -362,6 +379,20 @@ document.addEventListener('DOMContentLoaded', () => {
         addSafeListener('visionMenuBtn', 'click', (e) => { e.stopPropagation(); const m = getEl('visionMenu'); const act = m.classList.contains('active'); closeAll(); if(!act) m.classList.add('active'); });
         addSafeListener('earthquakeMenuBtn', 'click', (e) => { e.stopPropagation(); const m = getEl('earthquakeMenu'); const act = m.classList.contains('active'); closeAll(); if(!act) m.classList.add('active'); });
 
+        // Diğer Alt Butonlar (Placeholder işlevler)
+        const placeholderBtns = ['cameraOption', 'galleryOption', 'fileOption', 'coderBtn', 'dataBtn', 'writerBtn', 'visionAnalysisBtn', 'ocrBtn', 'bgRemoverBtn', 'styleTransferBtn', 'kandilliBtn', 'afadBtn', 'quakeAnalysisBtn', 'emergencyInfoBtn', 'voiceBtn', 'searchBtn', 'shareBtn'];
+        placeholderBtns.forEach(id => {
+            addSafeListener(id, 'click', (e) => {
+                e.stopPropagation();
+                if (id === 'shareBtn') {
+                    if (navigator.share) navigator.share({ title: 'Solenz AI', url: window.location.href });
+                    else alert('Link kopyalandı!');
+                } else {
+                    alert('Bu özellik yakında aktif edilecek!');
+                }
+            });
+        });
+
         // Modallar
         addSafeListener('themeSettingsOption', 'click', () => getEl('themeModal').classList.add('active'));
         addSafeListener('closeThemeModal', 'click', () => getEl('themeModal').classList.remove('active'));
@@ -381,6 +412,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         addSafeListener('closeProfileModal', 'click', () => getEl('profileModal').classList.remove('active'));
         addSafeListener('closeProfileBtn', 'click', () => getEl('profileModal').classList.remove('active'));
+
+        // Suggestion Cards
+        document.querySelectorAll('.suggestion-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const text = card.querySelector('p').textContent;
+                const input = getEl('userInput');
+                if (input) {
+                    input.value = text;
+                    input.dispatchEvent(new Event('input'));
+                    sendMessage();
+                }
+            });
+        });
     };
 
     rebindElements();
