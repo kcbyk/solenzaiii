@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Solenz AI - Final Version</title>
+    <title>Solenz AI - Premium</title>
     <!-- Fonts & Icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
@@ -14,25 +14,24 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 </head>
 <body data-theme="light">
+    <!-- Giriş Ekranı -->
     <div class="auth-screen" id="authScreen">
         <div id="authLoading" class="auth-loading" style="display: none;">
             <div class="spinner"></div>
-            <p>Solenzi Hazırlanıyor...</p>
+            <p>Solenzi Yükleniyor...</p>
         </div>
         <div class="auth-card" id="authCard">
             <div class="auth-header">
                 <h2>Solenz AI</h2>
-                <p>Yapay zekanın en şık hali.</p>
+                <p>Zekanın en estetik formu.</p>
             </div>
             <div class="auth-forms">
-                <!-- Login Form -->
                 <form id="loginForm" onsubmit="return false;">
                     <input type="email" id="loginEmail" placeholder="E-posta" required>
                     <input type="password" id="loginPass" placeholder="Şifre" required>
                     <button class="btn-primary" id="loginSubmit">Giriş Yap</button>
                     <p class="auth-switch">Hesabın yok mu? <a href="#" id="toRegister">Kayıt Ol</a></p>
                 </form>
-                <!-- Register Form -->
                 <form id="registerForm" style="display: none;" onsubmit="return false;">
                     <input type="text" id="regName" placeholder="Ad Soyad" required>
                     <input type="email" id="regEmail" placeholder="E-posta" required>
@@ -49,6 +48,7 @@
         </div>
     </div>
 
+    <!-- Ana Uygulama Düzeni -->
     <div class="app-layout" id="appLayout" style="display: none;">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
@@ -72,11 +72,12 @@
                 <div class="user-profile" id="userProfileBtn">
                     <div class="avatar" id="userAvatar">S</div>
                     <div class="user-info-display">
-                        <span class="username" id="userNameDisplay">Kullanıcı</span>
+                        <span class="username" id="userNameDisplay">...</span>
                         <span class="user-email" id="userEmailDisplay">...</span>
                     </div>
                     <span class="material-symbols-outlined expand-icon">unfold_more</span>
                 </div>
+                <!-- Kullanıcı Menüsü -->
                 <div class="dropdown-menu" id="userMenuDropdown">
                     <div class="dropdown-item" id="openProfileBtn">
                         <span class="material-symbols-outlined">person</span>
@@ -91,14 +92,17 @@
             </div>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Sidebar Overlay (Mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Ana İçerik -->
         <main class="main-content">
             <header class="top-nav">
                 <div class="left-nav">
                     <button class="icon-btn" id="menuToggle">
                         <span class="material-symbols-outlined">menu</span>
                     </button>
-                    <div class="model-select-wrapper">
+                    <div class="dropdown-wrapper">
                         <button class="model-btn" id="modelSelectorBtn">
                             <span class="material-symbols-outlined mobile-history-icon">history</span>
                             <span id="selectedModelName">Solenz Core 1.0</span>
@@ -135,14 +139,14 @@
                             </div>
                             <div class="dropdown-item" id="instructionsOption">
                                 <span class="material-symbols-outlined">info</span>
-                                <span>Bilgi</span>
+                                <span>Talimatlar</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </header>
 
-            <div class="chat-container">
+            <div class="chat-container" id="chatContainer">
                 <div class="welcome-screen" id="welcomeScreen">
                     <h1>Sana nasıl yardımcı olabilirim?</h1>
                     <div class="suggestion-grid">
@@ -152,7 +156,6 @@
                     </div>
                 </div>
                 <div class="messages-list" id="messagesList"></div>
-                <div class="scroll-anchor"></div>
             </div>
 
             <footer class="input-area">
@@ -172,10 +175,34 @@
                                     <div class="dropdown-wrapper">
                                         <button class="action-btn" id="featureMenuBtn"><span class="material-symbols-outlined">auto_awesome</span></button>
                                         <div class="dropdown-menu bottom-up" id="featureMenu">
-                                            <div class="dropdown-item toggle" id="webSearchBtn"><span class="material-symbols-outlined">public</span><span>Web'de Ara</span><span class="status-dot"></span></div>
-                                            <div class="dropdown-item toggle" id="reasoningBtn"><span class="material-symbols-outlined">psychology</span><span>Derin Analiz</span><span class="status-dot"></span></div>
-                                            <div class="dropdown-item toggle" id="imageGenBtn"><span class="material-symbols-outlined">palette</span><span>Görsel Üret</span><span class="status-dot"></span></div>
-                                            <div class="dropdown-item toggle" id="lastEarthquakesBtn"><span class="material-symbols-outlined">volcano</span><span>Depremler</span><span class="status-dot"></span></div>
+                                            <div class="dropdown-item toggle" id="webSearchBtn">
+                                                <div class="toggle-info">
+                                                    <span class="material-symbols-outlined">public</span>
+                                                    <span>Web'de Ara</span>
+                                                </div>
+                                                <span class="status-dot"></span>
+                                            </div>
+                                            <div class="dropdown-item toggle" id="reasoningBtn">
+                                                <div class="toggle-info">
+                                                    <span class="material-symbols-outlined">psychology</span>
+                                                    <span>Derin Analiz</span>
+                                                </div>
+                                                <span class="status-dot"></span>
+                                            </div>
+                                            <div class="dropdown-item toggle" id="imageGenBtn">
+                                                <div class="toggle-info">
+                                                    <span class="material-symbols-outlined">palette</span>
+                                                    <span>Görsel Üret</span>
+                                                </div>
+                                                <span class="status-dot"></span>
+                                            </div>
+                                            <div class="dropdown-item toggle" id="lastEarthquakesBtn">
+                                                <div class="toggle-info">
+                                                    <span class="material-symbols-outlined">volcano</span>
+                                                    <span>Depremler</span>
+                                                </div>
+                                                <span class="status-dot"></span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -186,7 +213,7 @@
                             </div>
                         </div>
                     </div>
-                    <p class="disclaimer">Solenz AI hata yapabilir, bilgileri kontrol et.</p>
+                    <p class="disclaimer">Solenz AI hatalı bilgiler sunabilir, önemli yanıtları kontrol et.</p>
                 </div>
             </footer>
         </main>
@@ -195,21 +222,30 @@
     <!-- Modals -->
     <div class="modal" id="themeModal">
         <div class="modal-card">
-            <div class="modal-header"><h3>Tema</h3><button class="close-modal"><span class="material-symbols-outlined">close</span></button></div>
+            <div class="modal-header"><h3>Tema Ayarları</h3><button class="close-modal"><span class="material-symbols-outlined">close</span></button></div>
             <div class="modal-body">
-                <div class="theme-choice active" data-theme="light">Açık Tema</div>
-                <div class="theme-choice" data-theme="dark">Koyu Tema</div>
+                <div class="theme-options">
+                    <div class="theme-choice active" data-theme="light">
+                        <span class="material-symbols-outlined">light_mode</span><span>Açık Tema</span>
+                    </div>
+                    <div class="theme-choice" data-theme="dark">
+                        <span class="material-symbols-outlined">dark_mode</span><span>Koyu Tema</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="modal" id="profileModal">
         <div class="modal-card">
-            <div class="modal-header"><h3>Profil</h3><button class="close-modal"><span class="material-symbols-outlined">close</span></button></div>
-            <div class="modal-body profile-body">
+            <div class="modal-header"><h3>Profil Bilgileri</h3><button class="close-modal"><span class="material-symbols-outlined">close</span></button></div>
+            <div class="modal-body profile-content">
                 <div class="avatar-large" id="profileAvatarLarge">S</div>
                 <h2 id="profileNameText">...</h2>
                 <p id="profileEmailText">...</p>
+                <div class="profile-stats">
+                    <div class="stat-item"><span>Sohbet Sayısı</span><strong id="chatCount">0</strong></div>
+                </div>
             </div>
         </div>
     </div>
@@ -218,8 +254,8 @@
         <div class="modal-card">
             <div class="modal-header"><h3>Sistem Komutu</h3><button class="close-modal"><span class="material-symbols-outlined">close</span></button></div>
             <div class="modal-body">
-                <textarea id="systemPromptInput" placeholder="AI nasıl davranmalı?"></textarea>
-                <button class="btn-primary" id="saveSystemPrompt">Kaydet</button>
+                <textarea id="systemPromptInput" placeholder="Yapay zeka nasıl bir karakterde yanıt vermeli?"></textarea>
+                <button class="btn-primary" id="saveSystemPrompt">Ayarları Kaydet</button>
             </div>
         </div>
     </div>

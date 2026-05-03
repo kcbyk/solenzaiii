@@ -1,113 +1,119 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("Solenzi Core Final v1.0 Başlatılıyor...");
+    console.log("Solenz AI Premium v1.0 Başlatılıyor...");
 
-    // --- 1. Global Değişkenler ---
-    let chats = JSON.parse(localStorage.getItem('solenz_chats')) || [];
-    let currentChatId = null;
-    let currentRole = 'general';
-    let systemPrompt = localStorage.getItem('solenz_system_prompt') || "";
-    let currentUserUid = null;
+    // --- 1. Konfigürasyon ve Global Durum ---
+    const config = {
+        firebase: {
+            apiKey: "AIzaSyDDT_Hbzi6xVlESl3_lOryLoCKePi5We00",
+            authDomain: "solenzzai.firebaseapp.com",
+            projectId: "solenzzai",
+            storageBucket: "solenzzai.firebasestorage.app",
+            messagingSenderId: "1006831041210",
+            appId: "1:1006831041210:web:cdb28fcea10a53fed1a083"
+        }
+    };
 
-    // Durumlar (Toggles)
-    let states = {
-        webSearch: false,
-        reasoning: false,
-        imageGen: false,
-        lastQuakes: false
+    let state = {
+        user: null,
+        chats: [],
+        currentChatId: null,
+        role: 'general',
+        model: 'sonnet',
+        systemPrompt: localStorage.getItem('solenz_system_prompt') || "",
+        toggles: {
+            webSearch: false,
+            reasoning: false,
+            imageGen: false,
+            lastQuakes: false
+        }
     };
 
     // --- 2. Yardımcı Fonksiyonlar ---
     const getEl = (id) => document.getElementById(id);
-    const saveToLocal = () => localStorage.setItem('solenz_chats', JSON.stringify(chats));
+    const getAll = (sel) => document.querySelectorAll(sel);
 
-    // --- 3. Firebase Yapılandırması ---
-    const firebaseConfig = { 
-        apiKey: "AIzaSyDDT_Hbzi6xVlESl3_lOryLoCKePi5We00", 
-        authDomain: "solenzzai.firebaseapp.com", 
-        projectId: "solenzzai", 
-        storageBucket: "solenzzai.firebasestorage.app", 
-        messagingSenderId: "1006831041210", 
-        appId: "1:1006831041210:web:cdb28fcea10a53fed1a083" 
-    };
-
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    // --- 3. Firebase Başlatma ---
+    if (!firebase.apps.length) firebase.initializeApp(config.firebase);
     const db = firebase.firestore();
     const auth = firebase.auth();
     const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-    // --- 4. UI Yönetimi ---
-    const showAuthLoading = (show) => getEl('authLoading').style.display = show ? 'flex' : 'none';
-    const showAuthCard = (show) => getEl('authCard').style.display = show ? 'block' : 'none';
+    // --- 4. Çekirdek Fonksiyonlar ---
 
     const updateAuthUI = (user) => {
+        state.user = user;
+        const authScreen = getEl('authScreen');
+        const appLayout = getEl('appLayout');
+
         if (user) {
-            getEl('authScreen').style.display = 'none';
-            getEl('appLayout').style.display = 'flex';
+            authScreen.style.display = 'none';
+            appLayout.style.display = 'flex';
             getEl('userNameDisplay').textContent = user.displayName || 'Kullanıcı';
             getEl('userEmailDisplay').textContent = user.email;
             getEl('userAvatar').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
-            loadUserChats(user.uid);
+            loadChats();
         } else {
-            getEl('authScreen').style.display = 'flex';
-            getEl('appLayout').style.display = 'none';
-            showAuthCard(true);
-            showAuthLoading(false);
+            authScreen.style.display = 'flex';
+            appLayout.style.display = 'none';
+            getEl('authCard').style.display = 'block';
+            getEl('authLoading').style.display = 'none';
         }
     };
 
-    const loadUserChats = async (uid) => {
-        currentUserUid = uid;
+    const loadChats = async () => {
+        if (!state.user) return;
         try {
-            const snap = await db.collection('users').doc(uid).collection('chats').orderBy('createdAt', 'desc').get();
-            chats = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const snap = await db.collection('users').doc(state.user.uid).collection('chats').orderBy('createdAt', 'desc').get();
+            state.chats = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderHistory();
-        } catch (e) { console.error("Geçmiş yüklenemedi:", e); }
+        } catch (e) { console.error("Chats yüklenemedi:", e); }
     };
 
     const renderHistory = () => {
         const hList = getEl('historyList');
         const pList = getEl('pinnedList');
-        if (!hList || !pList) return;
+        const pGroup = getEl('pinnedGroup');
 
         hList.innerHTML = ''; pList.innerHTML = '';
-        const pinned = chats.filter(c => c.pinned);
-        const normal = chats.filter(c => !c.pinned);
+        const pinned = state.chats.filter(c => c.pinned);
+        const normal = state.chats.filter(c => !c.pinned);
 
-        getEl('pinnedGroup').style.display = pinned.length > 0 ? 'block' : 'none';
+        pGroup.style.display = pinned.length > 0 ? 'block' : 'none';
 
-        pinned.forEach(c => pList.appendChild(createHistoryItem(c)));
-        normal.forEach(c => hList.appendChild(createHistoryItem(c)));
+        pinned.forEach(chat => pList.appendChild(createHistoryElement(chat)));
+        normal.forEach(chat => hList.appendChild(createHistoryElement(chat)));
     };
 
-    const createHistoryItem = (chat) => {
+    const createHistoryElement = (chat) => {
         const div = document.createElement('div');
-        div.className = `history-item ${chat.id === currentChatId ? 'active' : ''}`;
+        div.className = `history-item ${chat.id === state.currentChatId ? 'active' : ''}`;
         div.innerHTML = `
             <span class="item-text">${chat.title || 'Yeni Sohbet'}</span>
             <div class="history-actions">
-                <button class="action-btn pin-btn ${chat.pinned ? 'active' : ''}"><span class="material-symbols-outlined">${chat.pinned ? 'keep_off' : 'keep'}</span></button>
-                <button class="action-btn delete-btn"><span class="material-symbols-outlined">delete</span></button>
+                <button class="action-btn pin-btn" title="Sabitle"><span class="material-symbols-outlined">${chat.pinned ? 'keep_off' : 'keep'}</span></button>
+                <button class="action-btn delete-btn" title="Sil"><span class="material-symbols-outlined">delete</span></button>
             </div>
         `;
-        div.onclick = (e) => { if (!e.target.closest('.action-btn')) loadChat(chat.id); };
-        div.querySelector('.pin-btn').onclick = (e) => { e.stopPropagation(); chat.pinned = !chat.pinned; syncChat(chat); renderHistory(); };
-        div.querySelector('.delete-btn').onclick = (e) => { e.stopPropagation(); if (confirm('Silinsin mi?')) deleteChat(chat.id); };
+        div.onclick = (e) => { if (!e.target.closest('.action-btn')) switchChat(chat.id); };
+        div.querySelector('.pin-btn').onclick = (e) => { e.stopPropagation(); togglePin(chat.id); };
+        div.querySelector('.delete-btn').onclick = (e) => { e.stopPropagation(); deleteChat(chat.id); };
         return div;
     };
 
-    const loadChat = (id) => {
-        currentChatId = id;
-        const chat = chats.find(c => c.id === id);
+    const switchChat = (id) => {
+        state.currentChatId = id;
+        const chat = state.chats.find(c => c.id === id);
         if (!chat) return;
+
         getEl('messagesList').innerHTML = '';
         getEl('welcomeScreen').style.display = 'none';
-        chat.messages.forEach(m => addMessageToUI(m.text, m.sender));
+        chat.messages.forEach(m => appendMessageUI(m.text, m.sender));
         renderHistory();
         if (window.innerWidth <= 768) getEl('sidebar').classList.remove('active');
     };
 
     const startNewChat = () => {
-        currentChatId = null;
+        state.currentChatId = null;
         getEl('messagesList').innerHTML = '';
         getEl('welcomeScreen').style.display = 'flex';
         getEl('userInput').value = '';
@@ -116,64 +122,28 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const deleteChat = async (id) => {
-        chats = chats.filter(c => c.id !== id);
-        if (currentChatId === id) startNewChat();
+        if (!confirm('Bu sohbeti silmek istediğine emin misin?')) return;
+        state.chats = state.chats.filter(c => c.id !== id);
+        if (state.currentChatId === id) startNewChat();
         renderHistory();
-        if (currentUserUid) await db.collection('users').doc(currentUserUid).collection('chats').doc(String(id)).delete();
+        await db.collection('users').doc(state.user.uid).collection('chats').doc(String(id)).delete();
     };
 
-    const syncChat = async (chat) => {
-        saveToLocal();
-        if (currentUserUid) await db.collection('users').doc(currentUserUid).collection('chats').doc(String(chat.id)).set(chat, { merge: true });
+    const togglePin = async (id) => {
+        const chat = state.chats.find(c => c.id === id);
+        if (!chat) return;
+        chat.pinned = !chat.pinned;
+        renderHistory();
+        await db.collection('users').doc(state.user.uid).collection('chats').doc(String(id)).update({ pinned: chat.pinned });
     };
 
-    const addMessageToUI = (text, sender) => {
+    const appendMessageUI = (text, sender) => {
         const list = getEl('messagesList');
         const div = document.createElement('div');
         div.className = `message ${sender}`;
-        
-        // Markdown/HTML sanitization could go here, for now simple:
         div.innerHTML = `<div class="message-wrapper"><div class="msg-content">${text}</div></div>`;
         list.appendChild(div);
         div.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    const sendMessage = async () => {
-        const input = getEl('userInput');
-        const text = input.value.trim();
-        if (!text) return;
-
-        if (!currentChatId) {
-            currentChatId = Date.now();
-            chats.unshift({ id: currentChatId, title: text.substring(0, 30), messages: [], pinned: false, createdAt: Date.now() });
-            getEl('welcomeScreen').style.display = 'none';
-        }
-
-        const chat = chats.find(c => c.id === currentChatId);
-        chat.messages.push({ text: text, sender: 'user' });
-        addMessageToUI(text, 'user');
-        input.value = '';
-        input.style.height = 'auto';
-        getEl('sendBtn').disabled = true;
-
-        showTyping(true);
-        try {
-            const res = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text, role: currentRole, states, history: chat.messages.slice(-5) })
-            });
-            const data = await res.json();
-            showTyping(false);
-            if (data.text) {
-                chat.messages.push({ text: data.text, sender: 'bot' });
-                addMessageToUI(data.text, 'bot');
-                syncChat(chat);
-            }
-        } catch (e) {
-            showTyping(false);
-            addMessageToUI("Bir hata oluştu: " + e.message, 'bot');
-        }
     };
 
     const showTyping = (show) => {
@@ -189,125 +159,148 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- 5. Event Listeners ---
-    const setupEvents = () => {
-        // Auth
-        getEl('toRegister').onclick = () => { getEl('loginForm').style.display = 'none'; getEl('registerForm').style.display = 'block'; };
-        getEl('toLogin').onclick = () => { getEl('registerForm').style.display = 'none'; getEl('loginForm').style.display = 'block'; };
-        
-        getEl('loginSubmit').onclick = async () => {
-            const email = getEl('loginEmail').value;
-            const pass = getEl('loginPass').value;
-            try {
-                showAuthLoading(true); showAuthCard(false);
-                const res = await auth.signInWithEmailAndPassword(email, pass);
-                if (!res.user.emailVerified) { alert("E-postayı doğrulayın."); auth.signOut(); }
-            } catch (e) { alert(e.message); showAuthUI(null); }
-        };
+    const sendMessage = async () => {
+        const input = getEl('userInput');
+        const text = input.value.trim();
+        if (!text) return;
 
-        getEl('regSubmit').onclick = async () => {
-            const name = getEl('regName').value;
-            const email = getEl('regEmail').value;
-            const pass = getEl('regPass').value;
-            try {
-                showAuthLoading(true); showAuthCard(false);
-                const res = await auth.createUserWithEmailAndPassword(email, pass);
-                await res.user.updateProfile({ displayName: name });
-                await res.user.sendEmailVerification();
-                alert("Doğrulama e-postası gönderildi.");
-                auth.signOut();
-            } catch (e) { alert(e.message); showAuthUI(null); }
-        };
+        if (!state.currentChatId) {
+            state.currentChatId = Date.now().toString();
+            const newChat = {
+                id: state.currentChatId,
+                title: text.substring(0, 30),
+                messages: [],
+                pinned: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            state.chats.unshift(newChat);
+            getEl('welcomeScreen').style.display = 'none';
+        }
 
-        getEl('googleLogin').onclick = () => {
-            showAuthLoading(true); showAuthCard(false);
-            if (window.innerWidth <= 768) auth.signInWithRedirect(googleProvider);
-            else auth.signInWithPopup(googleProvider).then(r => updateAuthUI(r.user)).catch(e => alert(e.message));
-        };
+        const chat = state.chats.find(c => c.id === state.currentChatId);
+        chat.messages.push({ text, sender: 'user' });
+        appendMessageUI(text, 'user');
+        input.value = '';
+        input.style.height = 'auto';
+        getEl('sendBtn').disabled = true;
 
-        getEl('logoutBtn').onclick = () => auth.signOut();
+        showTyping(true);
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: text,
+                    role: state.role,
+                    model: state.model,
+                    states: state.toggles,
+                    systemPrompt: state.systemPrompt,
+                    history: chat.messages.slice(-6)
+                })
+            });
+            const data = await response.json();
+            showTyping(false);
+            if (data.text) {
+                chat.messages.push({ text: data.text, sender: 'bot' });
+                appendMessageUI(data.text, 'bot');
+                await db.collection('users').doc(state.user.uid).collection('chats').doc(state.currentChatId).set(chat, { merge: true });
+            }
+        } catch (e) {
+            showTyping(false);
+            appendMessageUI("Hata: " + e.message, 'bot');
+        }
+    };
 
-        // Chat UI
-        getEl('userInput').oninput = function() {
-            this.style.height = 'auto';
-            this.style.height = (this.scrollHeight) + 'px';
-            getEl('sendBtn').disabled = !this.value.trim();
-        };
+    // --- 5. UI Etkileşimleri (Dropdowns, Modals, Toggles) ---
 
-        getEl('userInput').onkeypress = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
-        getEl('sendBtn').onclick = sendMessage;
-        getEl('newChatSidebarBtn').onclick = startNewChat;
-        getEl('newChatTopBtn').onclick = startNewChat;
+    const closeAllMenus = () => {
+        getAll('.dropdown-menu').forEach(m => m.classList.remove('active'));
+    };
 
-        // Toggles
-        getEl('menuToggle').onclick = () => getEl('sidebar').classList.toggle('active');
-        
-        const bindToggle = (id, key) => {
+    const setupUI = () => {
+        // Dropdown Tetikleyicileri
+        const dropdownBinds = [
+            ['userProfileBtn', 'userMenuDropdown'],
+            ['modelSelectorBtn', 'modelDropdown'],
+            ['roleMenuBtn', 'roleDropdown'],
+            ['moreMenuBtn', 'moreDropdown'],
+            ['attachMenuBtn', 'attachmentMenu'],
+            ['featureMenuBtn', 'featureMenu']
+        ];
+
+        dropdownBinds.forEach(([btnId, menuId]) => {
+            const btn = getEl(btnId);
+            const menu = getEl(menuId);
+            if (btn && menu) {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const wasActive = menu.classList.contains('active');
+                    closeAllMenus();
+                    if (!wasActive) {
+                        // Mobilde modelSelectorBtn sidebar açar
+                        if (btnId === 'modelSelectorBtn' && window.innerWidth <= 768) {
+                            getEl('sidebar').classList.add('active');
+                            getEl('sidebarOverlay').classList.add('active');
+                        } else {
+                            menu.classList.add('active');
+                        }
+                    }
+                };
+            }
+        });
+
+        // Toggle Butonları
+        const toggleBinds = [
+            ['webSearchBtn', 'webSearch'],
+            ['reasoningBtn', 'reasoning'],
+            ['imageGenBtn', 'imageGen'],
+            ['lastEarthquakesBtn', 'lastQuakes']
+        ];
+
+        toggleBinds.forEach(([id, key]) => {
             getEl(id).onclick = function(e) {
                 e.stopPropagation();
-                states[key] = !states[key];
-                this.classList.toggle('active', states[key]);
+                state.toggles[key] = !state.toggles[key];
+                this.classList.toggle('active', state.toggles[key]);
             };
-        };
-        bindToggle('webSearchBtn', 'webSearch');
-        bindToggle('reasoningBtn', 'reasoning');
-        bindToggle('imageGenBtn', 'imageGen');
-        bindToggle('lastEarthquakesBtn', 'lastEarthquakes');
+        });
 
-        // Dropdowns
-        const bindDropdown = (btnId, menuId) => {
-            getEl(btnId).onclick = (e) => {
-                e.stopPropagation();
-                const menu = getEl(menuId);
-                const isAct = menu.classList.contains('active');
-                document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('active'));
-                if (!isAct) menu.classList.add('active');
-            };
-        };
-        bindDropdown('modelSelectorBtn', 'modelDropdown');
-        bindDropdown('roleMenuBtn', 'roleDropdown');
-        bindDropdown('moreMenuBtn', 'moreDropdown');
-        bindDropdown('userProfileBtn', 'userMenuDropdown');
-        bindDropdown('attachMenuBtn', 'attachmentMenu');
-        bindDropdown('featureMenuBtn', 'featureMenu');
-
-        // Modals
+        // Modallar
         getEl('themeSettingsOption').onclick = () => getEl('themeModal').classList.add('active');
-        getEl('instructionsOption').onclick = () => getEl('instructionsModal').classList.add('active');
+        getEl('instructionsOption').onclick = () => alert('Solenz AI: Gelişmiş yapay zeka asistanı.');
         getEl('promptModalBtn').onclick = () => {
-            getEl('systemPromptInput').value = systemPrompt;
+            getEl('systemPromptInput').value = state.systemPrompt;
             getEl('promptModal').classList.add('active');
         };
         getEl('openProfileBtn').onclick = () => {
-            const u = auth.currentUser;
-            if (u) {
-                getEl('profileNameText').textContent = u.displayName || 'Kullanıcı';
-                getEl('profileEmailText').textContent = u.email;
-                getEl('profileAvatarLarge').textContent = (u.displayName || u.email).charAt(0).toUpperCase();
-            }
+            getEl('profileNameText').textContent = state.user.displayName || 'Kullanıcı';
+            getEl('profileEmailText').textContent = state.user.email;
+            getEl('chatCount').textContent = state.chats.length;
             getEl('profileModal').classList.add('active');
         };
 
-        document.querySelectorAll('.close-modal').forEach(btn => {
-            btn.onclick = () => document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+        getAll('.close-modal').forEach(btn => {
+            btn.onclick = () => getAll('.modal').forEach(m => m.classList.remove('active'));
         });
 
-        getEl('saveSystemPrompt').onclick = () => {
-            systemPrompt = getEl('systemPromptInput').value;
-            localStorage.setItem('solenz_system_prompt', systemPrompt);
-            getEl('promptModal').classList.remove('active');
-            alert("Sistem komutu kaydedildi.");
-        };
-
-        // Theme Switch
-        document.querySelectorAll('.theme-choice').forEach(btn => {
-            btn.onclick = function() {
+        // Tema Seçimi
+        getAll('.theme-choice').forEach(choice => {
+            choice.onclick = function() {
                 const t = this.dataset.theme;
                 document.body.setAttribute('data-theme', t);
-                document.querySelectorAll('.theme-choice').forEach(b => b.classList.remove('active'));
+                getAll('.theme-choice').forEach(c => c.classList.remove('active'));
                 this.classList.add('active');
+                localStorage.setItem('solenz_theme', t);
             };
         });
+
+        // Sistem Komutu Kaydet
+        getEl('saveSystemPrompt').onclick = () => {
+            state.systemPrompt = getEl('systemPromptInput').value;
+            localStorage.setItem('solenz_system_prompt', state.systemPrompt);
+            getEl('promptModal').classList.remove('active');
+            alert('Sistem komutu güncellendi.');
+        };
 
         // Fullscreen
         getEl('fullscreenBtn').onclick = () => {
@@ -315,37 +308,122 @@ document.addEventListener('DOMContentLoaded', () => {
             else document.exitFullscreen();
         };
 
-        // Global Click to close dropdowns
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.dropdown-wrapper') && !e.target.closest('.model-select-wrapper') && !e.target.closest('.user-profile')) {
-                document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('active'));
+        // Sidebar Kapatma (Mobil)
+        getEl('menuToggle').onclick = () => {
+            getEl('sidebar').classList.add('active');
+            getEl('sidebarOverlay').classList.add('active');
+        };
+        getEl('sidebarOverlay').onclick = () => {
+            getEl('sidebar').classList.remove('active');
+            getEl('sidebarOverlay').classList.remove('active');
+        };
+
+        // Yeni Sohbet Butonları
+        getEl('newChatSidebarBtn').onclick = startNewChat;
+        getEl('newChatTopBtn').onclick = startNewChat;
+
+        // Input Alanı Dinamik Yükseklik
+        getEl('userInput').oninput = function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+            getEl('sendBtn').disabled = !this.value.trim();
+        };
+
+        getEl('userInput').onkeypress = (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
             }
+        };
+
+        getEl('sendBtn').onclick = sendMessage;
+
+        // Öneri Kartları
+        getAll('.suggestion-card').forEach(card => {
+            card.onclick = () => {
+                const text = card.querySelector('p').textContent;
+                getEl('userInput').value = text;
+                getEl('userInput').dispatchEvent(new Event('input'));
+                sendMessage();
+            };
         });
+
+        // Global Tıklama ile Menüleri Kapat
+        document.onclick = (e) => {
+            if (!e.target.closest('.dropdown-wrapper') && !e.target.closest('.user-profile')) {
+                closeAllMenus();
+            }
+        };
     };
 
-    // --- 6. Init ---
-    setupEvents();
+    // --- 6. Auth İşlemleri ---
 
-    auth.onAuthStateChanged(user => {
-        updateAuthUI(user);
-    });
+    const setupAuth = () => {
+        getEl('toRegister').onclick = () => { getEl('loginForm').style.display = 'none'; getEl('registerForm').style.display = 'block'; };
+        getEl('toLogin').onclick = () => { getEl('registerForm').style.display = 'none'; getEl('loginForm').style.display = 'block'; };
 
-    auth.getRedirectResult().then(r => {
-        if (r.user) updateAuthUI(r.user);
-    }).catch(e => {
-        console.error("Redirect hatası:", e);
-        showAuthCard(true); showAuthLoading(false);
-    });
+        getEl('loginSubmit').onclick = async () => {
+            const email = getEl('loginEmail').value;
+            const pass = getEl('loginPass').value;
+            try {
+                getEl('authCard').style.display = 'none';
+                getEl('authLoading').style.display = 'flex';
+                await auth.signInWithEmailAndPassword(email, pass);
+            } catch (e) {
+                alert(e.message);
+                updateAuthUI(null);
+            }
+        };
 
-    // Mobile Keyboard Fix
+        getEl('regSubmit').onclick = async () => {
+            const name = getEl('regName').value;
+            const email = getEl('regEmail').value;
+            const pass = getEl('regPass').value;
+            try {
+                getEl('authCard').style.display = 'none';
+                getEl('authLoading').style.display = 'flex';
+                const res = await auth.createUserWithEmailAndPassword(email, pass);
+                await res.user.updateProfile({ displayName: name });
+                await db.collection('users').doc(res.user.uid).set({ name, email, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                alert('Kayıt başarılı! Giriş yapılıyor...');
+            } catch (e) {
+                alert(e.message);
+                updateAuthUI(null);
+            }
+        };
+
+        getEl('googleLogin').onclick = () => {
+            getEl('authCard').style.display = 'none';
+            getEl('authLoading').style.display = 'flex';
+            if (window.innerWidth <= 768) auth.signInWithRedirect(googleProvider);
+            else auth.signInWithPopup(googleProvider).catch(e => { alert(e.message); updateAuthUI(null); });
+        };
+
+        getEl('logoutBtn').onclick = () => auth.signOut();
+    };
+
+    // --- 7. Başlatma ---
+    setupUI();
+    setupAuth();
+
+    auth.onAuthStateChanged(user => updateAuthUI(user));
+    auth.getRedirectResult().then(r => { if (r.user) updateAuthUI(r.user); });
+
+    // Mobil Klavye Düzeltmesi
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
             const vh = window.visualViewport.height;
             getEl('appLayout').style.height = `${vh}px`;
-            setTimeout(() => {
-                const list = getEl('messagesList');
-                if (list.lastElementChild) list.lastElementChild.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
+            const list = getEl('messagesList');
+            if (list.lastElementChild) list.lastElementChild.scrollIntoView({ behavior: 'smooth' });
         });
     }
+
+    // Kayıtlı Temayı Yükle
+    const savedTheme = localStorage.getItem('solenz_theme') || 'light';
+    document.body.setAttribute('data-theme', savedTheme);
+    getAll('.theme-choice').forEach(c => {
+        if (c.dataset.theme === savedTheme) c.classList.add('active');
+        else c.classList.remove('active');
+    });
 });
