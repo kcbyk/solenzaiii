@@ -8,60 +8,103 @@ const state = {
 
 // --- DOM Elements ---
 const getEl = id => document.getElementById(id);
-const elements = {
-    appLayout: getEl('appLayout'),
-    sidebar: getEl('sidebar'),
-    sidebarOverlay: getEl('sidebarOverlay'),
-    menuOpenBtn: getEl('menuOpenBtn'),
-    menuCloseBtn: getEl('menuCloseBtn'),
-    chatInput: getEl('chatInput'),
-    sendBtn: getEl('sendBtn'),
-    messagesContainer: getEl('messagesContainer'),
-    welcomeContainer: document.querySelector('.welcome-container'),
-    themeToggleBtn: getEl('themeToggleBtn'),
-    newChatBtn: getEl('newChatBtn')
+
+// Safe element selector
+const elements = {};
+const updateElements = () => {
+    elements.appLayout = getEl('appLayout');
+    elements.sidebar = getEl('sidebar');
+    elements.sidebarOverlay = getEl('sidebarOverlay');
+    elements.menuOpenBtn = getEl('menuOpenBtn');
+    elements.menuCloseBtn = getEl('menuCloseBtn');
+    elements.chatInput = getEl('chatInput');
+    elements.sendBtn = getEl('sendBtn');
+    elements.messagesContainer = getEl('messagesContainer');
+    elements.welcomeContainer = document.querySelector('.welcome-container');
+    elements.themeToggleBtn = getEl('themeToggleBtn');
+    elements.newChatBtn = getEl('newChatBtn');
+    elements.modelSelectorBtn = getEl('modelSelectorBtn');
+    elements.userProfileBtn = getEl('userProfileBtn');
+    elements.footerBtns = document.querySelectorAll('.footer-btn');
+    elements.suggestionCards = document.querySelectorAll('.suggestion-card');
+    elements.attachBtn = document.querySelector('.attach-btn');
+    elements.imageBtn = getEl('imageBtn');
+    elements.micBtn = getEl('micBtn');
 };
 
 // --- Initialization ---
 const init = () => {
+    updateElements();
     setupEventListeners();
     setupMobileFixes();
+    console.log("Solenz AI initialized");
 };
 
 // --- Event Listeners ---
 const setupEventListeners = () => {
     // Sidebar Toggles
-    elements.menuOpenBtn.addEventListener('click', toggleSidebar);
-    elements.menuCloseBtn.addEventListener('click', toggleSidebar);
-    elements.sidebarOverlay.addEventListener('click', toggleSidebar);
+    if (elements.menuOpenBtn) elements.menuOpenBtn.onclick = toggleSidebar;
+    if (elements.menuCloseBtn) elements.menuCloseBtn.onclick = toggleSidebar;
+    if (elements.sidebarOverlay) elements.sidebarOverlay.onclick = toggleSidebar;
 
     // Input Handling
-    elements.chatInput.addEventListener('input', handleInput);
-    elements.chatInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !e.shiftKey && !elements.sendBtn.disabled) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
+    if (elements.chatInput) {
+        elements.chatInput.oninput = handleInput;
+        elements.chatInput.onkeydown = e => {
+            if (e.key === 'Enter' && !e.shiftKey && !elements.sendBtn.disabled) {
+                e.preventDefault();
+                sendMessage();
+            }
+        };
+    }
 
     // Send Button
-    elements.sendBtn.addEventListener('click', sendMessage);
+    if (elements.sendBtn) elements.sendBtn.onclick = sendMessage;
 
     // Theme Toggle
-    elements.themeToggleBtn.addEventListener('click', toggleTheme);
+    if (elements.themeToggleBtn) elements.themeToggleBtn.onclick = toggleTheme;
 
     // New Chat
-    elements.newChatBtn.addEventListener('click', startNewChat);
+    if (elements.newChatBtn) elements.newChatBtn.onclick = startNewChat;
 
     // Suggestion Cards
-    document.querySelectorAll('.suggestion-card').forEach(card => {
-        card.addEventListener('click', () => {
+    elements.suggestionCards.forEach(card => {
+        card.onclick = () => {
             const text = card.querySelector('p').textContent;
             elements.chatInput.value = text;
             handleInput();
             sendMessage();
-        });
+        };
     });
+
+    // Model Selector
+    if (elements.modelSelectorBtn) {
+        elements.modelSelectorBtn.onclick = () => alert("Model seçimi yakında eklenecek!");
+    }
+
+    // User Profile
+    if (elements.userProfileBtn) {
+        elements.userProfileBtn.onclick = () => alert("Profil ayarları yakında eklenecek!");
+    }
+
+    // Footer Buttons (Help, History, Settings)
+    elements.footerBtns.forEach(btn => {
+        btn.onclick = () => {
+            const text = btn.querySelector('.btn-text').textContent;
+            alert(`${text} yakında eklenecek!`);
+        };
+    });
+
+    // Attach, Image, Mic Buttons
+    if (elements.attachBtn) {
+        elements.attachBtn.onclick = () => alert("Dosya ekleme yakında eklenecek!");
+    }
+    if (elements.imageBtn) {
+        elements.imageBtn.onclick = () => alert("Görsel analizi yakında eklenecek!");
+    }
+    if (elements.micBtn) {
+        elements.micBtn.onclick = () => alert("Sesli komut yakında eklenecek!");
+    }
 };
 
 // --- Functions ---
